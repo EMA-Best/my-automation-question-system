@@ -1,4 +1,4 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
 
+# 直接执行lint和format命令
 npm run lint && npm run format && git add .
