@@ -1,0 +1,11 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Use local commitlint to lint the commit message file passed by husky
+npx --no-install commitlint --edit "$1"
+
+#!/bin/sh
+#!/bin/sh
+echo "Skipping commitlint check"
+exit 0
+

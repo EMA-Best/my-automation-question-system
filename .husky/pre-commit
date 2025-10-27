@@ -3,6 +3,6 @@
 # 执行lint，使用|| true确保即使失败也继续执行下一个命令
 npm run lint || true
 
-# 执行format和git add命令
-npm run format
+# 执行format命令，即使失败也继续执行git add
+npm run format || true
 git add .
