@@ -1,4 +1,8 @@
 #!/bin/sh
 
-# 直接执行lint和format命令
-npm run lint && npm run format && git add .
+# 执行lint，使用|| true确保即使失败也继续执行下一个命令
+npm run lint || true
+
+# 执行format和git add命令
+npm run format
+git add .

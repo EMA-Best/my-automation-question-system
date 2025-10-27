@@ -4,10 +4,12 @@ import './App.css';
 
 function App() {
   const a = 1;
+  const b = 1;
+  const operation = '重新修改husky';
   return (
     <div className="App">
       <header className="App-header">
-         <img src={logo} className="App-logo" alt="logo" />
+        <img src={logo} className="App-logo" alt="logo" />
         <p>
           Edit <code>src/App.tsx</code> and save to reload.
         </p>
