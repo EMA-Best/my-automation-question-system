@@ -22,7 +22,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "prepare": "husky"
+    "prepare": "husky install",
+    "lint": "eslint src",
+    "format": "prettier --write ."
   },
   "eslintConfig": {
     "extends": [
@@ -43,6 +45,12 @@
     ]
   },
   "devDependencies": {
-    "husky": "^9.1.7"
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "husky": "^9.1.7",
+    "prettier": "^3.6.2"
   }
 }
