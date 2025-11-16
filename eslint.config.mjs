@@ -55,7 +55,7 @@ export default [
       'react/prop-types': 'off',
 
       // Prettier规则
-      'prettier/prettier': 'error',
+      'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
 

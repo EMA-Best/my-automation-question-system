@@ -1,0 +1,13 @@
+.container {
+  height: calc(100vh - 64px - 65px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  background: #fff;
+
+  .title {
+    margin-left: 110px;
+    margin-bottom: 20px;
+  }
+}
