@@ -38,9 +38,30 @@ export const componentsSlice = createSlice({
     ) => {
       state.selectedId = action.payload;
     },
+    // 添加新组件
+    addComponent: (
+      state: ComponentsStateType,
+      action: PayloadAction<ComponentInfoType>
+    ) => {
+      const newComponent = action.payload;
+      const { selectedId, componentList } = state;
+      // 寻找当前选中的组件
+      const index = componentList.findIndex((c) => c.fe_id === selectedId);
+
+      if (index < 0) {
+        // 未选中任何组件 直接在组件最后添加
+        state.componentList.push(newComponent);
+      } else {
+        // 选中了组件 在选中组件后面添加
+        state.componentList.splice(index + 1, 0, newComponent);
+      }
+      // 选中新添加的组件
+      state.selectedId = newComponent.fe_id;
+    },
   },
 });
 
-export const { resetComponents, changeSelectedId } = componentsSlice.actions;
+export const { resetComponents, changeSelectedId, addComponent } =
+  componentsSlice.actions;
 
 export default componentsSlice.reducer;

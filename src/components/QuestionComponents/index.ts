@@ -20,6 +20,21 @@ const componentConfigList: ComponentConfigType[] = [
   QuestionTitleConfig,
 ];
 
+// 组件分组
+export const componentConfGroup = [
+  {
+    groupId: 'textGroup',
+    groupName: '文本显示',
+    components: [QuestionTitleConfig],
+  },
+  {
+    groupId: 'inputGroup',
+    groupName: '用户输入',
+    components: [QuestionInputConfig],
+  },
+];
+
+// 根据组件类型获取组件配置
 export function getComponentConfigByType(type: string) {
   return componentConfigList.find((item) => item.type === type);
 }
