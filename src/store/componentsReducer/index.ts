@@ -3,7 +3,7 @@ import { ComponentPropsType } from '../../components/QuestionComponents';
 
 // 组件信息类型
 export type ComponentInfoType = {
-  fe_id: string;
+  fe_id: string; // 前端生成的id，服务端Mongodb不认这种格式，所以自定义一个fe_id
   type: string;
   title: string;
   props: ComponentPropsType;
@@ -58,10 +58,28 @@ export const componentsSlice = createSlice({
       // 选中新添加的组件
       state.selectedId = newComponent.fe_id;
     },
+    // 修改组件属性
+    changeComponentProps: (
+      state: ComponentsStateType,
+      action: PayloadAction<{
+        fe_id: string;
+        newProps: ComponentPropsType;
+      }>
+    ) => {
+      const { fe_id, newProps } = action.payload;
+      // 当前要修改属性的这个组件
+      const curComponent = state.componentList.find((c) => c.fe_id === fe_id);
+      if (curComponent == null) return;
+      curComponent.props = { ...curComponent.props, ...newProps };
+    },
   },
 });
 
-export const { resetComponents, changeSelectedId, addComponent } =
-  componentsSlice.actions;
+export const {
+  resetComponents,
+  changeSelectedId,
+  addComponent,
+  changeComponentProps,
+} = componentsSlice.actions;
 
 export default componentsSlice.reducer;

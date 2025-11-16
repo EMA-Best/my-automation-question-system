@@ -7,9 +7,16 @@ function useGetComponentInfo() {
     (state) => state.components
   ) as ComponentsStateType;
   const { componentList = [], selectedId = '' } = components;
+
+  // 找到选中的组件
+  const selectedComponent = componentList.find(
+    (comp) => comp.fe_id === selectedId
+  );
+
   return {
     componentList,
-    selectedId: selectedId,
+    selectedId,
+    selectedComponent,
   };
 }
 
