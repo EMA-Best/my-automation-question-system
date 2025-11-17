@@ -37,15 +37,19 @@ const EditCanvas: FC<PropsType> = (props) => {
     );
   }
   // 组件点击的回调
-
   const handleClick = (e: MouseEvent, id: string) => {
     // 阻止事件冒泡 否则会触发父组件的点击事件（取消选中组件）
     e.stopPropagation();
     dispatch(changeSelectedId(id));
   };
+
+  // 过滤出未隐藏的组件
+  const visibleComponentList = componentList.filter(
+    (component) => !component.isHidden
+  );
   return (
     <div className={styles.canvas}>
-      {componentList.map((component) => {
+      {visibleComponentList.map((component) => {
         const { fe_id } = component;
         // 拼接class name
         const wrapperDefaultClassName = styles['component-wrapper'];

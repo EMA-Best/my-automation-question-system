@@ -1,11 +1,13 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ComponentPropsType } from '../../components/QuestionComponents';
+import { getNextSelectedId } from './utils';
 
 // 组件信息类型
 export type ComponentInfoType = {
   fe_id: string; // 前端生成的id，服务端Mongodb不认这种格式，所以自定义一个fe_id
   type: string;
   title: string;
+  isHidden?: boolean;
   props: ComponentPropsType;
 };
 
@@ -72,6 +74,46 @@ export const componentsSlice = createSlice({
       if (curComponent == null) return;
       curComponent.props = { ...curComponent.props, ...newProps };
     },
+    // 删除选中的组件
+    removeSelectedComponent: (state: ComponentsStateType) => {
+      const { selectedId, componentList } = state;
+      // 寻找当前选中的组件
+      const index = componentList.findIndex((c) => c.fe_id === selectedId);
+      // 未选中任何组件 什么也不做
+      if (index < 0) return;
+      // 重新计算 selectedId
+      const newSelectedId = getNextSelectedId(componentList, selectedId);
+      state.selectedId = newSelectedId;
+      // 删除选中的组件
+      componentList.splice(index, 1);
+    },
+    // 隐藏/显示 组件
+    changeComponentHidden: (
+      state: ComponentsStateType,
+      action: PayloadAction<{
+        fe_id: string;
+        isHidden: boolean;
+      }>
+    ) => {
+      const { componentList } = state;
+      const { fe_id, isHidden } = action.payload;
+
+      // 重新计算 selectedId
+      let newSelectedId = '';
+      if (isHidden) {
+        // 要隐藏
+        newSelectedId = getNextSelectedId(componentList, fe_id);
+      } else {
+        // 要显示
+        newSelectedId = fe_id;
+      }
+      state.selectedId = newSelectedId;
+
+      // 找到当前要隐藏的组件
+      const curComponent = componentList.find((c) => c.fe_id === fe_id);
+      if (curComponent == null) return;
+      curComponent.isHidden = isHidden;
+    },
   },
 });
 
@@ -80,6 +122,8 @@ export const {
   changeSelectedId,
   addComponent,
   changeComponentProps,
+  removeSelectedComponent,
+  changeComponentHidden,
 } = componentsSlice.actions;
 
 export default componentsSlice.reducer;
