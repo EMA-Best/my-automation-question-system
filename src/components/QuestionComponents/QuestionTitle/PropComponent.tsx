@@ -3,7 +3,7 @@ import { Form, Input, Select, Checkbox } from 'antd';
 import { QuestionTitlePropsType } from './interface';
 
 const PropComponent: FC<QuestionTitlePropsType> = (props) => {
-  const { text, level, isCenter, onChange } = props;
+  const { text, level, isCenter, onChange, disabled } = props;
   const [form] = Form.useForm();
 
   // 组件挂载时，初始化表单值（更新）
@@ -21,6 +21,7 @@ const PropComponent: FC<QuestionTitlePropsType> = (props) => {
     <Form
       form={form}
       layout="vertical"
+      disabled={disabled}
       initialValues={{ text, level, isCenter }}
       onValuesChange={handleChange}
     >

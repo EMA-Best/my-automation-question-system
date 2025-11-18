@@ -20,6 +20,12 @@
   border-color: #1890ff !important;
 }
 
+// 被锁定的样式
+.locked {
+  opacity: 0.5;
+  cursor: not-allowed; // 锁定后，鼠标指针变成不允许的样式
+}
+
 .component {
   pointer-events: none; // 屏蔽鼠标行为，防止点击到组件上
 }

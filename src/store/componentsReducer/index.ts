@@ -8,6 +8,7 @@ export type ComponentInfoType = {
   type: string;
   title: string;
   isHidden?: boolean;
+  isLocked?: boolean;
   props: ComponentPropsType;
 };
 
@@ -114,6 +115,21 @@ export const componentsSlice = createSlice({
       if (curComponent == null) return;
       curComponent.isHidden = isHidden;
     },
+    // 锁定/解锁 组件
+    toggleComponentLocked: (
+      state: ComponentsStateType,
+      action: PayloadAction<{
+        fe_id: string;
+      }>
+    ) => {
+      const { componentList } = state;
+      const { fe_id } = action.payload;
+
+      // 找到当前要锁定/解锁的组件
+      const curComponent = componentList.find((c) => c.fe_id === fe_id);
+      if (curComponent == null) return;
+      curComponent.isLocked = !curComponent.isLocked;
+    },
   },
 });
 
@@ -124,6 +140,7 @@ export const {
   changeComponentProps,
   removeSelectedComponent,
   changeComponentHidden,
+  toggleComponentLocked,
 } = componentsSlice.actions;
 
 export default componentsSlice.reducer;

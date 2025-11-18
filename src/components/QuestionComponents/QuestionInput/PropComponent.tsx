@@ -3,7 +3,7 @@ import { Form, Input } from 'antd';
 import { QuestionInputPropsType } from './interface';
 
 const PropComponent: FC<QuestionInputPropsType> = (props) => {
-  const { title, placeholder, onChange } = props;
+  const { title, placeholder, onChange, disabled } = props;
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -23,6 +23,7 @@ const PropComponent: FC<QuestionInputPropsType> = (props) => {
     <Form
       form={form}
       layout="vertical"
+      disabled={disabled}
       initialValues={{ title, placeholder }}
       onValuesChange={handleChange}
     >
