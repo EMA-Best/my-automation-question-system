@@ -16,9 +16,12 @@ import {
   pasteCopiedComponent,
 } from '../../../../../store/componentsReducer';
 import useGetComponentInfo from '../../../../../hooks/useGetComponentInfo';
+import useBindCanvansKeyPress from '../../../../../hooks/useBindCanvansKeyPress';
 
 const EditToolbar: FC = () => {
   const dispatch = useDispatch();
+  // 绑定画布键盘(快捷键)事件
+  useBindCanvansKeyPress();
 
   // 获取选中的组件id
   const { selectedId, selectedComponent, copiedComponent } =
@@ -51,6 +54,8 @@ const EditToolbar: FC = () => {
   const handlePaste = () => {
     dispatch(pasteCopiedComponent());
   };
+
+  // todo 上移/下移 撤销/重做
 
   return (
     <Space>
