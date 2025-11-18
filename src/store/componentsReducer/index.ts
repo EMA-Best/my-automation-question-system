@@ -1,6 +1,8 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ComponentPropsType } from '../../components/QuestionComponents';
-import { getNextSelectedId } from './utils';
+import { getNextSelectedId, insertNewComponent } from './utils';
+import cloneDeep from 'lodash.clonedeep';
+import { nanoid } from 'nanoid';
 
 // 组件信息类型
 export type ComponentInfoType = {
@@ -15,11 +17,13 @@ export type ComponentInfoType = {
 export type ComponentsStateType = {
   componentList: Array<ComponentInfoType>; // 组件列表
   selectedId: string; // 选中组件的ID
+  copiedComponent?: ComponentInfoType | null; // 复制的组件
 };
 
 const INIT_STATE: ComponentsStateType = {
   componentList: [],
   selectedId: '',
+  copiedComponent: null,
 };
 
 export const componentsSlice = createSlice({
@@ -47,19 +51,7 @@ export const componentsSlice = createSlice({
       action: PayloadAction<ComponentInfoType>
     ) => {
       const newComponent = action.payload;
-      const { selectedId, componentList } = state;
-      // 寻找当前选中的组件
-      const index = componentList.findIndex((c) => c.fe_id === selectedId);
-
-      if (index < 0) {
-        // 未选中任何组件 直接在组件最后添加
-        state.componentList.push(newComponent);
-      } else {
-        // 选中了组件 在选中组件后面添加
-        state.componentList.splice(index + 1, 0, newComponent);
-      }
-      // 选中新添加的组件
-      state.selectedId = newComponent.fe_id;
+      insertNewComponent(state, newComponent);
     },
     // 修改组件属性
     changeComponentProps: (
@@ -130,6 +122,22 @@ export const componentsSlice = createSlice({
       if (curComponent == null) return;
       curComponent.isLocked = !curComponent.isLocked;
     },
+    // 拷贝当前选中的组件
+    copySelectedComponent: (state: ComponentsStateType) => {
+      const { selectedId, componentList } = state;
+      // 寻找当前选中的组件
+      const curComponent = componentList.find((c) => c.fe_id === selectedId);
+      if (curComponent == null) return;
+      state.copiedComponent = cloneDeep(curComponent); // 深拷贝当前选中的组件
+    },
+    // 粘贴组件
+    pasteCopiedComponent: (state: ComponentsStateType) => {
+      const { copiedComponent } = state;
+      if (copiedComponent == null) return;
+      // 生成新的fe_id 避免id冲突
+      copiedComponent.fe_id = nanoid();
+      insertNewComponent(state, copiedComponent);
+    },
   },
 });
 
@@ -141,6 +149,8 @@ export const {
   removeSelectedComponent,
   changeComponentHidden,
   toggleComponentLocked,
+  copySelectedComponent,
+  pasteCopiedComponent,
 } = componentsSlice.actions;
 
 export default componentsSlice.reducer;

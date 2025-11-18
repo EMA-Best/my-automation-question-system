@@ -1,5 +1,6 @@
-import { ComponentInfoType } from '.';
+import { ComponentInfoType, ComponentsStateType } from '.';
 
+// 获取下一个选中的组件ID
 export function getNextSelectedId(
   componentList: ComponentInfoType[],
   fe_id: string
@@ -25,4 +26,24 @@ export function getNextSelectedId(
     }
   }
   return newSelectedId;
+}
+
+// 插入新组件
+export function insertNewComponent(
+  state: ComponentsStateType,
+  newComponent: ComponentInfoType
+) {
+  const { selectedId, componentList } = state;
+  // 寻找当前选中的组件
+  const index = componentList.findIndex((c) => c.fe_id === selectedId);
+
+  if (index < 0) {
+    // 未选中任何组件 直接在组件最后添加
+    state.componentList.push(newComponent);
+  } else {
+    // 选中了组件 在选中组件后面添加
+    state.componentList.splice(index + 1, 0, newComponent);
+  }
+  // 选中新添加的组件
+  state.selectedId = newComponent.fe_id;
 }
