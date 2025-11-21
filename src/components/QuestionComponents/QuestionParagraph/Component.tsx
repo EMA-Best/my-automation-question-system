@@ -7,7 +7,7 @@ import {
 
 const { Paragraph } = Typography;
 
-const Component: FC<QuestionParagraphPropsType> = (props) => {
+const QuestionParagraph: FC<QuestionParagraphPropsType> = (props) => {
   const { text = '', isCenter = false } = {
     ...QuestionParagraphDefaultProps,
     ...props,
@@ -29,4 +29,4 @@ const Component: FC<QuestionParagraphPropsType> = (props) => {
   );
 };
 
-export default Component;
+export default QuestionParagraph;
