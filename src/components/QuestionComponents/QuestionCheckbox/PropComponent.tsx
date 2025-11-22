@@ -1,44 +1,36 @@
-import { FC, useEffect } from 'react';
-import { QuestionRadioPropsType, OptionType } from './interface';
-import { Button, Checkbox, Form, Input, Select, Space } from 'antd';
+import { FC } from 'react';
+import { OptionType, QuestionCheckboxPropsType } from './interface';
+import { Button, Checkbox, Form, Input, Space } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { nanoid } from 'nanoid';
 
-const PropComponent: FC<QuestionRadioPropsType> = (props) => {
-  const { title, isVertical, options = [], value, onChange, disabled } = props;
+const PropComponent: FC<QuestionCheckboxPropsType> = (props) => {
+  const { title, isVertical, options = [], onChange, disabled } = props;
   const [form] = Form.useForm();
 
-  // 监听 props 变化，更新表单值
-  useEffect(() => {
-    form.setFieldsValue({
-      title,
-      isVertical,
-      options,
-      value,
-    });
-  }, [title, isVertical, options, value]);
-
-  // 监听表单值变化，触发 onChange 回调
   function handleValuesChange() {
+    // 调用 onChange
     if (onChange == null) return;
-    const newValues = form.getFieldsValue();
-    const { options = [] } = newValues;
+    // 从表单中获取最新值
+    const newValus = form.getFieldsValue();
+
+    const { options = [] } = newValus;
     // 遍历添加value值 因为是空的 所以需要添加
     options.forEach((opt: OptionType) => {
       if (opt.value) return;
       opt.value = nanoid(5);
     });
-    // console.log('newValues', newValues);
-    onChange(newValues);
+    // 调用 onChange
+    onChange(newValus);
   }
 
   return (
     <Form
       layout="vertical"
-      initialValues={{ title, isVertical, value, options }}
-      onValuesChange={handleValuesChange}
-      disabled={disabled}
       form={form}
+      initialValues={{ title, isVertical, options }}
+      disabled={disabled}
+      onValuesChange={handleValuesChange}
     >
       <Form.Item
         label="标题"
@@ -57,6 +49,14 @@ const PropComponent: FC<QuestionRadioPropsType> = (props) => {
                   const { key, name } = field;
                   return (
                     <Space key={key} align="baseline">
+                      {/* 当前选项 是否选中 */}
+                      <Form.Item
+                        name={[name, 'checked']}
+                        valuePropName="checked"
+                      >
+                        <Checkbox />
+                      </Form.Item>
+
                       {/* 当前选项 输入框*/}
                       <Form.Item
                         name={[name, 'text']}
@@ -106,19 +106,6 @@ const PropComponent: FC<QuestionRadioPropsType> = (props) => {
             );
           }}
         </Form.List>
-      </Form.Item>
-      <Form.Item label="默认选中" name="value">
-        <Select
-          value={value}
-          placeholder="请选择..."
-          options={options.map((opt) => {
-            const { text, value } = opt;
-            return {
-              label: text || '',
-              value,
-            };
-          })}
-        ></Select>
       </Form.Item>
       <Form.Item name="isVertical" valuePropName="checked">
         <Checkbox>竖向排列</Checkbox>
