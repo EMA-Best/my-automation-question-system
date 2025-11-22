@@ -1,13 +1,16 @@
 import classNames from 'classnames';
-import { Input, message } from 'antd';
+import { Button, Input, message } from 'antd';
 import { useDispatch } from 'react-redux';
 import styles from './index.module.scss';
 import useGetComponentInfo from '../../../../../hooks/useGetComponentInfo';
 import { useState, FC, ChangeEvent } from 'react';
 import {
+  changeComponentHidden,
   changeComponentTitle,
   changeSelectedId,
+  toggleComponentLocked,
 } from '../../../../../store/componentsReducer';
+import { EyeInvisibleOutlined, LockOutlined } from '@ant-design/icons';
 
 const Layers: FC = () => {
   const { componentList, selectedId } = useGetComponentInfo();
@@ -44,6 +47,16 @@ const Layers: FC = () => {
     dispatch(changeComponentTitle({ fe_id: changingTitleId, newTitle }));
   }
 
+  // 切换 隐藏/显示
+  function toggleHidden(fe_id: string, isHidden: boolean) {
+    dispatch(changeComponentHidden({ fe_id, isHidden }));
+  }
+
+  // 切换 锁定/解锁
+  function toggleLocked(fe_id: string) {
+    dispatch(toggleComponentLocked({ fe_id }));
+  }
+
   return (
     <>
       {componentList.map((c) => {
@@ -75,7 +88,24 @@ const Layers: FC = () => {
                 title
               )}
             </div>
-            <div className={styles.handler}>按钮</div>
+            <div className={styles.handler}>
+              <Button
+                size="small"
+                shape="circle"
+                className={!isHidden ? styles.btn : ''}
+                icon={<EyeInvisibleOutlined />}
+                type={isHidden ? 'primary' : 'text'}
+                onClick={() => toggleHidden(fe_id, !isHidden)}
+              />
+              <Button
+                size="small"
+                shape="circle"
+                className={!isLocked ? styles.btn : ''}
+                icon={<LockOutlined />}
+                type={isLocked ? 'primary' : 'text'}
+                onClick={() => toggleLocked(fe_id)}
+              />
+            </div>
           </div>
         );
       })}
