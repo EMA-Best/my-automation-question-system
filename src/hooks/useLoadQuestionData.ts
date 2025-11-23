@@ -10,6 +10,7 @@ import { useRequest } from 'ahooks';
 import { useDispatch } from 'react-redux';
 import { resetComponents } from '../store/componentsReducer';
 import { useEffect } from 'react';
+import { resetPageInfo } from '../store/pageInfoReducer';
 
 // 加载单条问卷数据的hook
 const useLoadQuestionData = () => {
@@ -31,7 +32,13 @@ const useLoadQuestionData = () => {
   // 根据获取的data 设置 redux store
   useEffect(() => {
     if (!data) return;
-    const { componentList = [] } = data;
+    const {
+      title = '',
+      desc = '',
+      js = '',
+      css = '',
+      componentList = [],
+    } = data;
     // 获取默认的selectedId
     let selectedId = '';
     // 如果组件列表不为空，默认选中第一个组件
@@ -40,6 +47,8 @@ const useLoadQuestionData = () => {
     }
     // 把 componentList 存储到Redux store中
     dispatch(resetComponents({ componentList, selectedId }));
+    // 把问卷信息存储到Redux store中
+    dispatch(resetPageInfo({ title, desc, js, css }));
   }, [data]);
 
   // 根据id变化，判断执行ajax 加载问卷数据
