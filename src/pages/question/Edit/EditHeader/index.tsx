@@ -6,6 +6,7 @@ import { LeftOutlined } from '@ant-design/icons';
 import EditToolbar from './EditToolbar';
 import EditTitle from './EditTitle';
 import EditSaveButton from './EditSaveButton';
+import EditPublishButton from './EditPublishButton';
 
 const EditHeader: FC = () => {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ const EditHeader: FC = () => {
         <div className={styles.right}>
           <Space>
             <EditSaveButton />
-            <Button type="primary">发布</Button>
+            <EditPublishButton />
           </Space>
         </div>
       </div>
