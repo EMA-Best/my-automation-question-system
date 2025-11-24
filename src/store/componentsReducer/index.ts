@@ -3,6 +3,7 @@ import { ComponentPropsType } from '../../components/QuestionComponents';
 import { getNextSelectedId, insertNewComponent } from './utils';
 import cloneDeep from 'lodash.clonedeep';
 import { nanoid } from 'nanoid';
+import { arrayMove } from '@dnd-kit/sortable';
 
 // 组件信息类型
 export type ComponentInfoType = {
@@ -178,6 +179,19 @@ export const componentsSlice = createSlice({
       if (curComponent == null) return;
       curComponent.title = newTitle;
     },
+    // 移动组件位置
+    moveComponent: (
+      state: ComponentsStateType,
+      action: PayloadAction<{
+        oldIndex: number;
+        newIndex: number;
+      }>
+    ) => {
+      const { oldIndex, newIndex } = action.payload;
+      const { componentList: curComponentList } = state;
+      // 通过 arrayMove 函数移动组件位置
+      state.componentList = arrayMove(curComponentList, oldIndex, newIndex);
+    },
   },
 });
 
@@ -194,6 +208,7 @@ export const {
   selectPrevComponent,
   selectNextComponent,
   changeComponentTitle,
+  moveComponent,
 } = componentsSlice.actions;
 
 export default componentsSlice.reducer;
