@@ -5,6 +5,8 @@ import {
   DownOutlined,
   EyeInvisibleOutlined,
   LockOutlined,
+  RedoOutlined,
+  UndoOutlined,
   UpOutlined,
 } from '@ant-design/icons';
 import { Button, Space, Tooltip } from 'antd';
@@ -20,6 +22,7 @@ import {
 } from '../../../../../store/componentsReducer';
 import useGetComponentInfo from '../../../../../hooks/useGetComponentInfo';
 import useBindCanvansKeyPress from '../../../../../hooks/useBindCanvansKeyPress';
+import { ActionCreators } from 'redux-undo';
 
 const EditToolbar: FC = () => {
   const dispatch = useDispatch();
@@ -77,13 +80,22 @@ const EditToolbar: FC = () => {
   };
 
   // 下移组件
-  // 上移组件
   const moveDown = () => {
     // 如果是最后一个组件，不能下移
     if (isLast) return;
     dispatch(
       moveComponent({ oldIndex: selectedIndex, newIndex: selectedIndex + 1 })
     );
+  };
+
+  // 撤销操作
+  const undo = () => {
+    dispatch(ActionCreators.undo());
+  };
+
+  // 重做操作
+  const redo = () => {
+    dispatch(ActionCreators.redo());
   };
   return (
     <Space>
@@ -139,6 +151,12 @@ const EditToolbar: FC = () => {
           onClick={moveDown}
           disabled={isLast}
         ></Button>
+      </Tooltip>
+      <Tooltip title="撤销">
+        <Button shape="circle" icon={<UndoOutlined />} onClick={undo}></Button>
+      </Tooltip>
+      <Tooltip title="重做">
+        <Button shape="circle" icon={<RedoOutlined />} onClick={redo}></Button>
       </Tooltip>
     </Space>
   );

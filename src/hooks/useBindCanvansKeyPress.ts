@@ -11,6 +11,7 @@ import {
   selectPrevComponent,
   selectNextComponent,
 } from '../store/componentsReducer';
+import { ActionCreators } from 'redux-undo';
 
 // 检查光标是否在可输入元素上
 function isActiveElementValid() {
@@ -21,6 +22,7 @@ function isActiveElementValid() {
 
   // 增加了 dnd-kit 之后, 需要匹配到div元素
   if (activeElem == document.body) return true; // 没选中的时候
+  // 原因是dnt-kit给组件外层增加了一层div，所以需要匹配到div元素
   if (activeElem?.matches('div[role="button"]')) return true;
   return false;
 }
@@ -55,6 +57,24 @@ function useBindCanvansKeyPress() {
   useKeyPress(['downarrow'], () => {
     if (!isActiveElementValid()) return; // 光标在可输入元素上时，不选中下一个组件
     dispatch(selectNextComponent());
+  });
+
+  // 撤销
+  useKeyPress(
+    ['ctrl.z', 'meta.z'],
+    () => {
+      if (!isActiveElementValid()) return; // 光标在可输入元素上时，不撤销操作
+      dispatch(ActionCreators.undo());
+    },
+    {
+      exactMatch: true, // 严格匹配 ctrl.z 否则ctrl.shift.z 也会触发撤销
+    }
+  );
+
+  // 重做
+  useKeyPress(['ctrl.shift.z', 'meta.shift.z'], () => {
+    if (!isActiveElementValid()) return; // 光标在可输入元素上时，不重做操作
+    dispatch(ActionCreators.redo());
   });
 }
 
