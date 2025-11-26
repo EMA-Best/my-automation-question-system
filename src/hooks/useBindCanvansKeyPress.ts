@@ -14,8 +14,14 @@ import {
 
 // 检查光标是否在可输入元素上
 function isActiveElementValid() {
-  const activeElem = document.activeElement;
-  if (activeElem === document.body) return true; // 光标没有在input等可输入元素上
+  const activeElem = document.activeElement; // 获取当前活动元素（光标所在元素）
+
+  // 没有增加dnd-kit之前 ，光标在body上时，也可以删除组件
+  // if (activeElem === document.body) return true; // 光标没有在input等可输入元素上
+
+  // 增加了 dnd-kit 之后, 需要匹配到div元素
+  if (activeElem == document.body) return true; // 没选中的时候
+  if (activeElem?.matches('div[role="button"]')) return true;
   return false;
 }
 

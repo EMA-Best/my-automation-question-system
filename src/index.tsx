@@ -7,6 +7,7 @@ import { RouterProvider } from 'react-router-dom';
 import '@ant-design/v5-patch-for-react-19';
 import { Provider } from 'react-redux';
 import store from './store';
+import './App.css';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
