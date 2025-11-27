@@ -7,6 +7,8 @@ import { changeSelectedId } from '../../../store/componentsReducer';
 import LeftPanel from './LeftPanel';
 import RightPanel from './RightPanel';
 import EditHeader from './EditHeader';
+import { useTitle } from 'ahooks';
+import useGetPageInfo from '../../../hooks/useGetPageInfo';
 
 const Edit: FC = () => {
   const { loading } = useLoadQuestionData();
@@ -19,6 +21,12 @@ const Edit: FC = () => {
     console.log('点击空白区域，取消选中组件');
     dispatch(changeSelectedId(''));
   };
+
+  const { title } = useGetPageInfo();
+
+  // 设置页面标题
+  useTitle(`问卷编辑-${title}`);
+
   return (
     <div className={styles.container}>
       <div

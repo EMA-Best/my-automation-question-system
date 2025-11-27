@@ -63,7 +63,7 @@ const QuestionCard: FC<propsType> = (props: propsType) => {
 
   // 处理编辑问卷的回调
   const handleEdit = (id: string) => {
-    message.success('编辑成功');
+    // message.success('编辑成功');
     navigate(`/question/edit/${id}`);
   };
 
@@ -112,6 +112,11 @@ const QuestionCard: FC<propsType> = (props: propsType) => {
     }
   );
 
+  // 处理数据统计的回调
+  const handleStat = () => {
+    navigate(`/question/stat/${id}`);
+  };
+
   // 如果问卷已被删除，则不渲染
   if (isDeleted) return null;
 
@@ -156,6 +161,7 @@ const QuestionCard: FC<propsType> = (props: propsType) => {
             size="small"
             icon={<LineChartOutlined />}
             disabled={!isPublished}
+            onClick={handleStat}
           >
             数据统计
           </Button>

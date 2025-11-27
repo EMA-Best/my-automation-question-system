@@ -37,6 +37,7 @@ const useLoadQuestionData = () => {
       desc = '',
       js = '',
       css = '',
+      isPublished = false,
       componentList = [],
     } = data;
     // 获取默认的selectedId
@@ -48,7 +49,7 @@ const useLoadQuestionData = () => {
     // 把 componentList 存储到Redux store中
     dispatch(resetComponents({ componentList, selectedId }));
     // 把问卷信息存储到Redux store中
-    dispatch(resetPageInfo({ title, desc, js, css }));
+    dispatch(resetPageInfo({ title, desc, js, css, isPublished }));
   }, [data]);
 
   // 根据id变化，判断执行ajax 加载问卷数据
