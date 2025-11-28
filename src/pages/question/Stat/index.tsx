@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import useLoadQuestionData from '../../../hooks/useLoadQuestionData';
 import useGetPageInfo from '../../../hooks/useGetPageInfo';
 import { Button, Result, Spin } from 'antd';
@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTitle } from 'ahooks';
 import styles from './index.module.scss';
 import StatHeader from './StatHeader';
+import ComponentList from './ComponentList';
 
 const Stat: FC = () => {
   const navigate = useNavigate();
@@ -21,6 +22,11 @@ const Stat: FC = () => {
       <Spin />
     </div>
   );
+
+  // 状态提升 selectedId type 通过props传给子组件
+  const [selectedComponentId, setSelectedComponentId] = useState('');
+  // eslint-disable-next-line no-unused-vars
+  const [selectedComponentType, setSelectedComponentType] = useState('');
 
   // 内容部分
   const getContentElem = () => {
@@ -43,7 +49,13 @@ const Stat: FC = () => {
     // 如果问卷已发布
     return (
       <>
-        <div className={styles.left}>左侧</div>
+        <div className={styles.left}>
+          <ComponentList
+            selectedComponentId={selectedComponentId}
+            setSelectedComponentId={setSelectedComponentId}
+            setSelectedComponentType={setSelectedComponentType}
+          />
+        </div>
         <div className={styles.main}>中间</div>
         <div className={styles.right}>右侧</div>
       </>
