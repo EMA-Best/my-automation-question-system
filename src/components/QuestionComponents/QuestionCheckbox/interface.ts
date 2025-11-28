@@ -36,3 +36,8 @@ export const QuestionCheckboxDefaultProps: QuestionCheckboxPropsType = {
     },
   ],
 };
+
+// 统计数据属性类型
+export type QuestionCheckboxStatPropsType = {
+  stat: Array<{ name: string; count: number }>;
+};
