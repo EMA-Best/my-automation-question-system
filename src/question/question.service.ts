@@ -49,7 +49,7 @@ export class QuestionService {
 
   async findAllList({
     keyword = '',
-    page = 1,
+    pageNum = 1,
     pageSize = 10,
     isDeleted = false,
     isStar,
@@ -73,7 +73,7 @@ export class QuestionService {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       .find(whereOpt)
       .sort({ _id: -1 }) // 逆序排序
-      .skip((page - 1) * pageSize) // 分页
+      .skip((pageNum - 1) * pageSize) // 分页
       .limit(pageSize); // 每页数量
   }
 

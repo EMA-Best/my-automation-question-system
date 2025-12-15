@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { QuestionService } from './question.service';
 import { QuestionDto } from './dto/question.dto';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @Controller('question')
 export class QuestionController {
@@ -27,7 +28,7 @@ export class QuestionController {
   @Get()
   async findAll(
     @Query('keyword') keyword: string,
-    @Query('page') page: number,
+    @Query('pageNum') pageNum: number,
     @Query('pageSize') pageSize: number,
     @Query('isDeleted') isDeleted: boolean = false,
     @Query('isStar') isStar: boolean = false,
@@ -37,7 +38,7 @@ export class QuestionController {
     const { username } = req.user;
     const list = await this.questionService.findAllList({
       keyword,
-      page,
+      pageNum,
       pageSize,
       isDeleted,
       isStar,
@@ -59,6 +60,7 @@ export class QuestionController {
     };
   }
 
+  @Public() // 设置为公共接口 无需认证即可访问
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return await this.questionService.findById(id);
