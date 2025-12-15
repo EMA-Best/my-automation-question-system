@@ -100,4 +100,12 @@ export class QuestionController {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return await this.questionService.deleteMany(ids, username);
   }
+
+  @Post('duplicate/:id')
+  async duplicate(@Param('id') id: string, @Request() req) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const { username } = req.user;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return await this.questionService.duplicate(id, username);
+  }
 }
