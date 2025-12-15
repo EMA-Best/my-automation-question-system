@@ -64,6 +64,7 @@ export class QuestionController {
 
   @Patch(':id')
   async update(@Param('id') id: string, @Body() questionDto: QuestionDto) {
-    return await this.questionService.update(id, questionDto);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return await this.questionService.update(id, questionDto as any);
   }
 }
