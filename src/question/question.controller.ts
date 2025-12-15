@@ -29,14 +29,29 @@ export class QuestionController {
     @Query('keyword') keyword: string,
     @Query('page') page: number,
     @Query('pageSize') pageSize: number,
+    @Query('isDeleted') isDeleted: boolean = false,
+    @Query('isStar') isStar: boolean = false,
+    @Request() req,
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const { username } = req.user;
     const list = await this.questionService.findAllList({
       keyword,
       page,
       pageSize,
+      isDeleted,
+      isStar,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      author: username,
     });
 
-    const count = await this.questionService.countAll({ keyword });
+    const count = await this.questionService.countAll({
+      keyword,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      author: username,
+      isDeleted,
+      isStar,
+    });
 
     return {
       list,
@@ -46,7 +61,7 @@ export class QuestionController {
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return await this.questionService.findOne(id);
+    return await this.questionService.findById(id);
   }
 
   @Post()
@@ -58,13 +73,31 @@ export class QuestionController {
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string) {
-    return await this.questionService.delete(id);
+  async delete(@Param('id') id: string, @Request() req) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const { username } = req.user;
+    return await this.questionService.delete(id, username);
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() questionDto: QuestionDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() questionDto: QuestionDto,
+    @Request() req,
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const { username } = req.user;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    return await this.questionService.update(id, questionDto as any);
+    return await this.questionService.update(id, questionDto as any, username);
+  }
+
+  @Delete()
+  async deleteMany(@Body() body, @Request() req) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const { username } = req.user;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const { ids = [] } = body;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return await this.questionService.deleteMany(ids, username);
   }
 }

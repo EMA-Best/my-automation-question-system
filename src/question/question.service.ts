@@ -28,23 +28,40 @@ export class QuestionService {
     return await question.save();
   }
 
-  async findOne(id: string) {
+  async findById(id: string) {
     return await this.questionModel.findById(id);
   }
 
-  async delete(id: string) {
-    return await this.questionModel.findByIdAndDelete(id);
+  async delete(id: string, author: string) {
+    // return await this.questionModel.findByIdAndDelete(id);
+    return await this.questionModel.findOneAndDelete({ _id: id, author });
   }
 
-  async update(id: string, questionDto: Question) {
-    return await this.questionModel.findByIdAndUpdate(id, questionDto);
+  async update(id: string, questionDto: Question, author: string) {
+    return await this.questionModel.updateOne(
+      {
+        _id: id,
+        author,
+      },
+      questionDto,
+    );
   }
 
-  async findAllList({ keyword = '', page = 1, pageSize = 10 }) {
-    const whereOpt: any = {};
-    console.log('keyword', keyword);
-    console.log('page', page);
-    console.log('pageSize', pageSize);
+  async findAllList({
+    keyword = '',
+    page = 1,
+    pageSize = 10,
+    isDeleted = false,
+    isStar,
+    author = '',
+  }) {
+    const whereOpt: any = {
+      author,
+      isDeleted,
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+    if (isStar != null) whereOpt.isStar = isStar;
 
     if (keyword) {
       const reg = new RegExp(keyword, 'i');
@@ -60,8 +77,13 @@ export class QuestionService {
       .limit(pageSize); // 每页数量
   }
 
-  async countAll({ keyword = '' }) {
-    const whereOpt: any = {};
+  async countAll({ keyword = '', isDeleted = false, author = '', isStar }) {
+    const whereOpt: any = {
+      author,
+      isDeleted,
+    };
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    if (isStar != null) whereOpt.isStar = isStar;
     if (keyword) {
       const reg = new RegExp(keyword, 'i');
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -69,5 +91,16 @@ export class QuestionService {
     }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return await this.questionModel.countDocuments(whereOpt);
+  }
+
+  async deleteMany(
+    ids: string[],
+    author: string,
+  ): Promise<{ acknowledged: boolean; deletedCount: number }> {
+    const res = await this.questionModel.deleteMany({
+      _id: { $in: ids },
+      author,
+    });
+    return res;
   }
 }
