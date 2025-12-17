@@ -28,7 +28,11 @@ export class QuestionService {
     return await question.save();
   }
 
-  async findById(id: string) {
+  async findOne(id: string) {
+    // 在查询前校验 ObjectId，避免 CastError
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return null;
+    }
     return await this.questionModel.findById(id);
   }
 

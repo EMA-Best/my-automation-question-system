@@ -3,8 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpException,
-  HttpStatus,
   Param,
   Patch,
   Post,
@@ -19,11 +17,6 @@ import { Public } from 'src/auth/decorators/public.decorator';
 export class QuestionController {
   // 依赖注入问题服务
   constructor(private readonly questionService: QuestionService) {}
-
-  @Get('test')
-  getTest(): string {
-    throw new HttpException('获取数据失败', HttpStatus.BAD_REQUEST);
-  }
 
   @Get()
   async findAll(
@@ -63,7 +56,7 @@ export class QuestionController {
   @Public() // 设置为公共接口 无需认证即可访问
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    return await this.questionService.findById(id);
+    return await this.questionService.findOne(id);
   }
 
   @Post()
@@ -78,6 +71,7 @@ export class QuestionController {
   async delete(@Param('id') id: string, @Request() req) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const { username } = req.user;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return await this.questionService.delete(id, username);
   }
 

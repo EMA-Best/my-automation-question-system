@@ -10,6 +10,7 @@ import { Question, QuestionSchema } from './schemas/question.schema';
       { schema: QuestionSchema, name: Question.name },
     ]),
   ],
+  exports: [QuestionService],
   controllers: [QuestionController],
   providers: [QuestionService],
 })

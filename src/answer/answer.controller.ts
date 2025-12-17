@@ -10,6 +10,8 @@ export class AnswerController {
   @Public()
   @Post()
   async create(@Body() body) {
+    console.log('body: ', body);
+
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return await this.answerService.create(body);
   }
