@@ -3,11 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { AnswerService } from 'src/answer/answer.service';
 import { QuestionService } from 'src/question/question.service';
 
-type answerType = {
-  componentFeId: string;
-  value: string;
-};
-
 type answerComListType = {
   name: string;
   count: number;
@@ -23,69 +18,68 @@ export class StatService {
 
   private _getRadioOptText(value: any, props: any = {}) {
     const { options = [] } = props;
-    const length = options.length;
-
-    for (let i = 0; i < length; i++) {
-      const item = options[i];
+    for (const item of options) {
       if (item.value === value) {
         return item.text;
       }
     }
-    return '';
+    return value; // 如果找不到匹配的选项，返回原始值
   }
 
   private _getCheckboxOptText(value: any, props: any = {}) {
-    const { list = [] } = props;
-    const length = list.length;
-
-    for (let i = 0; i < length; i++) {
-      const item = list[i];
+    const { options = [] } = props;
+    for (const item of options) {
       if (item.value === value) {
         return item.text;
       }
     }
-    return '';
+    return value; // 如果找不到匹配的选项，返回原始值
   }
 
   private _genAnswersInfo(question: any, answerList: any[] = []) {
-    const res: answerType = { componentFeId: '', value: '' };
+    const res: Record<string, any> = {};
     const componentList: any[] = question?.componentList || [];
 
-    console.log('componentList: ', componentList);
+    // console.log('componentList: ', componentList);
 
-    console.log('answerList: ', answerList);
+    // console.log('answerList: ', answerList);
 
     answerList.forEach((item) => {
       const componentFeId =
         item.componentFeId || item.fe_id || item.componentId || item.id || '';
       // item.value的值不是null或undefined时，赋值给rawValue，否则赋值为空数组
-      const rawValue = item.value ?? []; // 1
+      const rawValue = item.value ?? [];
       const valueArr = Array.isArray(rawValue) ? rawValue : [rawValue];
 
       const comp = componentList.find((c) => c.fe_id === componentFeId);
       if (!comp) {
         // 组件缺失时直接回填原始值
-        res.componentFeId = componentFeId;
-        res.value = valueArr.toString();
+        res[componentFeId] = valueArr.toString();
         return;
       }
 
       const { type, props = {} } = comp;
       if (type === 'questionRadio') {
-        res.componentFeId = componentFeId;
-        res.value = valueArr
+        res[componentFeId] = valueArr
           .map((v) => this._getRadioOptText(v, props))
           .toString();
       } else if (type === 'questionCheckbox') {
-        res.componentFeId = componentFeId;
-        res.value = valueArr
-          .map((v) => this._getCheckboxOptText(v, props))
-          .toString();
+        // 针对多选组件，先检查是否有选项数据
+        const options = props.options || [];
+        if (options.length === 0) {
+          // 如果没有选项数据，直接使用原始值
+          res[componentFeId] = valueArr.toString();
+        } else {
+          // 否则转换为选项文本
+          res[componentFeId] = valueArr
+            .map((v) => this._getCheckboxOptText(v, props))
+            .toString();
+        }
       } else {
-        res.componentFeId = componentFeId;
-        res.value = valueArr.toString();
+        res[componentFeId] = valueArr.toString();
       }
     });
+    // console.log('res: ', res);
 
     return res;
   }
@@ -103,6 +97,8 @@ export class StatService {
     if (total === 0) return noData;
     const answerList = await this.answerService.findAll(questionId, opt);
 
+    console.log('getQuestionStatListAndCount answerList: ', answerList);
+
     const list = answerList.map((answer: any) => {
       // {_id:'',componentId: '', value: ''}
       return {
@@ -110,6 +106,8 @@ export class StatService {
         ...this._genAnswersInfo(q, (answer.answerList || []) as any[]),
       };
     });
+
+    console.log('getQuestionStatListAndCount list: ', list);
 
     return {
       list,
@@ -157,6 +155,7 @@ export class StatService {
 
     // 整理数据
     const list: answerComListType = [];
+
     for (const val in countInfo) {
       // 根据val计算text
       let text = '';
