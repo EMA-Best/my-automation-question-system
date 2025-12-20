@@ -16,6 +16,7 @@ export class StatService {
     private readonly questionService: QuestionService,
   ) {}
 
+  // 获取单选按钮的选项文本
   private _getRadioOptText(value: any, props: any = {}) {
     const { options = [] } = props;
     for (const item of options) {
@@ -26,6 +27,7 @@ export class StatService {
     return value; // 如果找不到匹配的选项，返回原始值
   }
 
+  // 获取多选按钮的选项文本
   private _getCheckboxOptText(value: any, props: any = {}) {
     const { options = [] } = props;
     for (const item of options) {
@@ -36,6 +38,7 @@ export class StatService {
     return value; // 如果找不到匹配的选项，返回原始值
   }
 
+  // 生成答卷信息
   private _genAnswersInfo(question: any, answerList: any[] = []) {
     const res: Record<string, any> = {};
     const componentList: any[] = question?.componentList || [];

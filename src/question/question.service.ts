@@ -59,26 +59,57 @@ export class QuestionService {
     isStar,
     author = '',
   }) {
-    const whereOpt: any = {
+    const matchStage: any = {
       author,
       isDeleted,
     };
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
-    if (isStar != null) whereOpt.isStar = isStar;
+    if (isStar != null) matchStage.isStar = isStar;
 
     if (keyword) {
       const reg = new RegExp(keyword, 'i');
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      whereOpt.title = { $regex: reg }; // 标题模糊查询
+      matchStage.title = { $regex: reg }; // 标题模糊查询
     }
 
-    return await this.questionModel
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      .find(whereOpt)
-      .sort({ _id: -1 }) // 逆序排序
-      .skip((pageNum - 1) * pageSize) // 分页
-      .limit(pageSize); // 每页数量
+    return await this.questionModel.aggregate([
+      // 过滤条件
+      { $match: matchStage },
+      // 联合Answer表
+      {
+        $lookup: {
+          from: 'answers', // 要联合的集合名
+          let: { questionId: '$_id' }, // 将本地_id赋值给变量
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: [
+                    { $toObjectId: '$questionId' }, // 将answer表中的questionId转换为ObjectId
+                    '$$questionId', // 与本地_id变量匹配
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'answerList', // 结果存放的字段名
+        },
+      },
+      // 添加answerCount字段，统计答卷数量
+      {
+        $addFields: {
+          answerCount: { $size: '$answerList' },
+        },
+      },
+      // 移除不需要的answerList字段
+      { $project: { answerList: 0 } },
+      // 排序
+      { $sort: { _id: -1 } },
+      // 分页
+      { $skip: (pageNum - 1) * pageSize },
+      { $limit: pageSize },
+    ]);
   }
 
   async countAll({ keyword = '', isDeleted = false, author = '', isStar }) {

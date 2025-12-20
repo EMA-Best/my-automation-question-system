@@ -6,6 +6,7 @@ export class StatController {
   // 依赖注入StatService
   constructor(private readonly statService: StatService) {}
 
+  // 获取问题的统计信息
   @Get(':questionId')
   async getQuestionStat(
     @Param('questionId') questionId: string,
@@ -18,6 +19,7 @@ export class StatController {
     });
   }
 
+  // 获取组件的统计信息
   @Get(':questionId/:componentFeId')
   async getComponentStat(
     @Param('questionId') questionId: string,

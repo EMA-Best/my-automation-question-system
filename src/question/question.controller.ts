@@ -21,18 +21,21 @@ export class QuestionController {
   @Get()
   async findAll(
     @Query('keyword') keyword: string,
-    @Query('pageNum') pageNum: number,
-    @Query('pageSize') pageSize: number,
+    @Query('pageNum') pageNum: string,
+    @Query('pageSize') pageSize: string,
     @Query('isDeleted') isDeleted: boolean = false,
     @Query('isStar') isStar: boolean = false,
     @Request() req,
   ) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const { username } = req.user;
+    // 将字符串转换为数字
+    const numPageNum = pageNum ? parseInt(pageNum, 10) : 1;
+    const numPageSize = pageSize ? parseInt(pageSize, 10) : 10;
     const list = await this.questionService.findAllList({
       keyword,
-      pageNum,
-      pageSize,
+      pageNum: numPageNum,
+      pageSize: numPageSize,
       isDeleted,
       isStar,
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
