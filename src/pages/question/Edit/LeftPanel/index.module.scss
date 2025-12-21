@@ -1,0 +1,25 @@
+.container {
+  height: 100%;
+  //   padding: 0 10px;
+}
+
+.tabs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabs :global(.ant-tabs-nav) {
+  flex: 0 0 auto;
+}
+
+.tabs :global(.ant-tabs-content-holder) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 10px;
+}
+
+.tabs :global(.ant-tabs-nav) {
+  padding: 0 10px;
+}

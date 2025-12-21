@@ -33,7 +33,7 @@ function useNavPage(waitingUserData: boolean) {
       // 跳转到登录页
       navigate(routePath.LOGIN);
     }
-  }, [username, pathname]);
+  }, [username, pathname, waitingUserData]);
 }
 
 export default useNavPage;

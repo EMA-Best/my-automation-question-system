@@ -39,7 +39,10 @@ const PageStat: FC<PropsType> = (props) => {
     {
       refreshDeps: [id, page, pageSize], // 依赖id,page,pageSize刷新
       onSuccess(res) {
+        console.log('问卷统计信息：', res);
+
         const { total, list = [] } = res;
+
         setTotal(total);
         setList(list);
       },
@@ -47,6 +50,8 @@ const PageStat: FC<PropsType> = (props) => {
   );
 
   const { componentList } = useGetComponentInfo();
+
+  console.log('componentList: ', componentList);
 
   // 表格需要的列配置
   const columns = componentList.map((c) => {
@@ -79,6 +84,10 @@ const PageStat: FC<PropsType> = (props) => {
     };
   });
 
+  console.log('columns: ', columns);
+
+  console.log('list: ', list);
+
   // 表格需要的数据源 默认没有key 所以需要手动添加
   const dataSource = list.map((item: any) => {
     return {
@@ -86,6 +95,8 @@ const PageStat: FC<PropsType> = (props) => {
       key: item._id,
     };
   });
+
+  console.log('dataSource: ', dataSource);
 
   // 表格元素
   const TableElem = (

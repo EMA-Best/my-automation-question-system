@@ -40,11 +40,8 @@ const ManageLayout: FC = () => {
   const { loading, run } = useRequest(createQuestionService, {
     manual: true, // 手动触发
     onSuccess: (result) => {
-      const { id } = result;
-      if (id) {
-        navigate(`/question/edit/${id}`);
-        message.success('新建问卷成功');
-      }
+      navigate(`/question/edit/${result.id || result._id}`);
+      message.success('新建问卷成功');
     },
   });
   // const handleCreate = async () => {

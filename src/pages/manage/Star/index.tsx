@@ -7,33 +7,6 @@ import ListSearch from '../../../components/ListSearch';
 import useLoadQuestionListData from '../../../hooks/useLoadQuestionListData';
 import ListPage from '../../../components/ListPage';
 
-// const rawQuestionList = [
-//   {
-//     id: 'q1',
-//     title: '问卷1',
-//     isPublished: true,
-//     isStar: true,
-//     answerCount: 5,
-//     createTime: '10月27日 21:36',
-//   },
-//   {
-//     id: 'q2',
-//     title: '问卷2',
-//     isPublished: false,
-//     isStar: true,
-//     answerCount: 3,
-//     createTime: '10月20日 10:15',
-//   },
-//   {
-//     id: 'q3',
-//     title: '问卷3',
-//     isPublished: true,
-//     isStar: true,
-//     answerCount: 10,
-//     createTime: '10月22日 22:00',
-//   },
-// ];
-
 const { Title } = Typography;
 
 const List: FC = () => {
@@ -69,7 +42,7 @@ const List: FC = () => {
                 isPublished={item.isPublished}
                 isStar={item.isStar}
                 answerCount={item.answerCount}
-                createdTime={item.createTime}
+                createdAt={item.createdAt}
               />
             );
           })}

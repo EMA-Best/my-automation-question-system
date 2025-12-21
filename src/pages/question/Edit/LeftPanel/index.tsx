@@ -3,6 +3,7 @@ import { FC } from 'react';
 import ComponentLib from './ComponentLib';
 import Layers from './Layers';
 import { Tabs } from 'antd';
+import styles from './index.module.scss';
 
 const LeftPanel: FC = () => {
   const tabsItems = [
@@ -28,7 +29,15 @@ const LeftPanel: FC = () => {
     },
   ];
 
-  return <Tabs defaultActiveKey="componentLib" items={tabsItems} />;
+  return (
+    <div className={styles.container}>
+      <Tabs
+        className={styles.tabs}
+        defaultActiveKey="componentLib"
+        items={tabsItems}
+      />
+    </div>
+  );
 };
 
 export default LeftPanel;

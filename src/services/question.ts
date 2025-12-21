@@ -28,6 +28,8 @@ export async function createQuestionService(): Promise<ResDataType> {
 export async function getQuestionListService(
   options: Partial<SearchOption> = {}
 ): Promise<ResDataType> {
+  console.log('options: ', options);
+
   const url = '/api/question';
   const data = (await axios.get(url, { params: options })) as ResDataType;
   return data;

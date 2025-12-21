@@ -30,6 +30,8 @@ const useLoadQuestionListData = (options: Partial<SearchOption> = {}) => {
   const pageSize = Number(searchParams.get(LIST_PAGE_SIZE_PARAM_KEY) || '10');
 
   const { isStar, isDeleted } = options;
+  console.log('typeof isStar: ', typeof isStar);
+
   // 定义useRequestion函数的第一个函数参数
   const getQuestionListServiceParams = async () => {
     const data = await getQuestionListService({

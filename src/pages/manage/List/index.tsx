@@ -8,41 +8,6 @@ import { useSearchParams } from 'react-router-dom';
 import { getQuestionListService } from '../../../services/question';
 import { LIST_SEARCH_PARAM_KEY } from '../../../constant/index';
 
-// const rawQuestionList = [
-//   {
-//     id: 'q1',
-//     title: '问卷1',
-//     isPublished: true,
-//     isStar: false,
-//     answerCount: 5,
-//     createTime: '10月27日 21:36',
-//   },
-//   {
-//     id: 'q2',
-//     title: '问卷2',
-//     isPublished: false,
-//     isStar: true,
-//     answerCount: 3,
-//     createTime: '10月20日 10:15',
-//   },
-//   {
-//     id: 'q3',
-//     title: '问卷3',
-//     isPublished: true,
-//     isStar: false,
-//     answerCount: 10,
-//     createTime: '10月22日 22:00',
-//   },
-//   {
-//     id: 'q14',
-//     title: '问卷4',
-//     isPublished: false,
-//     isStar: true,
-//     answerCount: 1,
-//     createTime: '10月10日 10:10',
-//   },
-// ];
-
 const { Title } = Typography;
 
 const List: FC = () => {
@@ -67,6 +32,7 @@ const List: FC = () => {
     setPageNum(1);
     setLists([]);
     setTotal(0);
+    console.log('lists: ', lists);
   }, [keyword]);
 
   // 真正加载
@@ -82,6 +48,8 @@ const List: FC = () => {
     {
       manual: true, // 手动触发加载
       onSuccess: (result) => {
+        console.log('result: ', result);
+
         const { list = [], total = 0 } = result;
         setLists(lists.concat(list)); // 累计
         setTotal(total);
@@ -100,21 +68,12 @@ const List: FC = () => {
 
       const elem = containerRef.current;
       if (elem == null) return;
-      console.log('elem:', elem);
 
       // 获取元素的位置信息
       const domRect = elem.getBoundingClientRect();
       if (domRect == null) return;
-      console.log('domRect:', domRect);
 
       const { bottom } = domRect;
-      console.log('bottom:', bottom);
-      console.log('window.innerHeight:', window.innerHeight);
-      console.log(
-        'document.documentElement.clientHeight:',
-        document.documentElement.clientHeight
-      );
-      console.log('document.body.clientHeight:', document.body.clientHeight);
 
       if (bottom <= window.innerHeight) {
         loadMore();
@@ -166,16 +125,20 @@ const List: FC = () => {
       <div className={styles.content}>
         {/* 问卷列表 */}
         {lists.length > 0 &&
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           lists.map((item: any) => {
+            // console.log(`item${index} `, item);
+            const { _id, title, isPublished, isStar, answerCount, createdAt } =
+              item;
             return (
               <QuestionCard
-                key={item.id}
-                id={item.id}
-                title={item.title}
-                isPublished={item.isPublished}
-                isStar={item.isStar}
-                answerCount={item.answerCount}
-                createdTime={item.createdTime}
+                key={_id}
+                id={_id}
+                title={title}
+                isPublished={isPublished}
+                isStar={isStar}
+                answerCount={answerCount}
+                createdAt={createdAt}
               />
             );
           })}

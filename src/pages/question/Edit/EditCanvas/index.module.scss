@@ -1,11 +1,13 @@
 .canvas {
   min-height: 100%;
   background-color: #fff;
-  overflow: hidden;
+  padding: 12px 0;
+  box-sizing: border-box;
+  // overflow: hidden;
 }
 
 .component-wrapper {
-  margin: 12px;
+  margin: 0 12px 12px;
   border: 1px solid #fff;
   padding: 12px;
   border-radius: 3px;

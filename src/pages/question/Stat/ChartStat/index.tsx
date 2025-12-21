@@ -23,6 +23,8 @@ const ChartStat: FC<PropsType> = (props) => {
     {
       manual: true,
       onSuccess(res) {
+        console.log('stat res: ', res);
+
         setStat(res.stat);
       },
     }

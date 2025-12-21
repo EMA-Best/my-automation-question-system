@@ -19,7 +19,7 @@ const EditPublishButton: FC = () => {
       await updateQuestionService(id, {
         ...pageInfo,
         componentList,
-        isPublish: true, // 标识问卷已发布
+        isPublished: true, // 标识问卷已发布
       });
     },
     {

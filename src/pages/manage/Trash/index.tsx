@@ -19,33 +19,8 @@ import {
   deleteQuestionService,
   updateQuestionService,
 } from '../../../services/question';
-
-// const rawQuestionList = [
-//   {
-//     id: 'q1',
-//     title: '问卷1',
-//     isPublished: true,
-//     isStar: true,
-//     answerCount: 5,
-//     createTime: '10月27日 21:36',
-//   },
-//   {
-//     id: 'q2',
-//     title: '问卷2',
-//     isPublished: false,
-//     isStar: false,
-//     answerCount: 3,
-//     createTime: '10月20日 10:15',
-//   },
-//   {
-//     id: 'q3',
-//     title: '问卷3',
-//     isPublished: true,
-//     isStar: true,
-//     answerCount: 10,
-//     createTime: '10月22日 22:00',
-//   },
-// ];
+import { formatDateTime } from '../../../utils/formatDateTime';
+import ListPage from '../../../components/ListPage';
 
 const questionColumns = [
   {
@@ -80,8 +55,10 @@ const questionColumns = [
   },
   {
     title: '创建时间',
-    dataIndex: 'createdTime',
-    key: 'createTime',
+    dataIndex: 'createdAt',
+    key: 'createdAt',
+    // 格式化时间
+    render: (createdAt: unknown) => formatDateTime(createdAt),
   },
 ];
 
@@ -95,7 +72,11 @@ const Trash: FC = () => {
   const { loading, data, refresh } = useLoadQuestionListData({
     isDeleted: true,
   });
-  const { list = [], total = 0 } = data || {};
+  // console.log('trash data: ', data);
+
+  const { list = [], count: total } = data || {};
+  // console.log('total：', total);
+
   // 记录选中的问卷id
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -178,7 +159,7 @@ const Trash: FC = () => {
         dataSource={list}
         columns={questionColumns}
         pagination={false}
-        rowKey={(q: any) => q.id}
+        rowKey={(q: any) => q._id}
         rowSelection={{
           type: 'checkbox',
           onChange: (selectedRowKeys) => {
@@ -207,9 +188,11 @@ const Trash: FC = () => {
         )}
         {/* 问卷列表 */}
         {!loading && list.length === 0 && <Empty description="暂无数据" />}
-        {list.length > 0 && TableElem}
+        {list.length > 0 && <div className={styles.tableWrap}>{TableElem}</div>}
       </div>
-      <div className={styles.footer}>分页 {total}</div>
+      <div className={styles.footer}>
+        <ListPage total={total} />
+      </div>
     </>
   );
 };

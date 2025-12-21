@@ -16,6 +16,7 @@ import {
   duplicateQuestionService,
   updateQuestionService,
 } from '../../services/question';
+import { formatDateTime } from '../../utils/formatDateTime';
 
 // 定义问卷卡片组件的props类型
 type propsType = {
@@ -24,18 +25,18 @@ type propsType = {
   isPublished: boolean;
   isStar: boolean;
   answerCount: number;
-  createdTime: string;
+  createdAt: string;
 };
 
 // 解构出Modal组件的confirm方法
 const { confirm } = Modal;
 
 const QuestionCard: FC<propsType> = (props: propsType) => {
-  // console.log('问卷卡片props:', props);
+  // console.log('问卷卡片props: ', props);
   // 导航器
   const navigate = useNavigate();
   // 解构props中的属性值
-  const { id, title, isPublished, isStar, answerCount, createdTime } = props;
+  const { id, title, isPublished, isStar, answerCount, createdAt } = props;
   // 处理复制问卷的回调
   // const handleCopy = () => {
   //   message.success('复制成功');
@@ -51,7 +52,7 @@ const QuestionCard: FC<propsType> = (props: propsType) => {
       manual: true,
       onSuccess(result) {
         message.success('复制成功');
-        navigate(`/question/edit/${result.id}`);
+        navigate(`/question/edit/${result.id || result._id}`);
       },
     }
   );
@@ -141,7 +142,7 @@ const QuestionCard: FC<propsType> = (props: propsType) => {
               <Tag>未发布</Tag>
             )}
             <span>答卷：{answerCount}</span>
-            <span>{createdTime}</span>
+            <span>{formatDateTime(createdAt)}</span>
           </Space>
         </div>
       </div>

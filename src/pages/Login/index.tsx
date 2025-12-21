@@ -10,11 +10,12 @@ import {
 } from 'antd';
 import { UserAddOutlined } from '@ant-design/icons';
 import { useTitle, useRequest } from 'ahooks';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import styles from './index.module.scss';
 import { routePath } from '../../router/index';
 import { loginService } from '../../services/user';
 import { setToken } from '../../utils/user-token';
+import useLoadUserData from '../../hooks/useLoadUserData';
 
 // 解构出Title组件
 const { Title } = Typography;
@@ -46,6 +47,8 @@ const Login: FC = () => {
   useTitle('小伦问卷 - 登录');
   // antd表单实例 用于设置表单默认值
   const [form] = Form.useForm();
+  // 获取loadUserInfo函数
+  const { loadUserInfo } = useLoadUserData();
   // 组件挂载时获取用户信息
   useEffect(() => {
     // 获取用户信息
@@ -72,7 +75,7 @@ const Login: FC = () => {
     }
   };
 
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   // 登录
   const { run: handleLogin } = useRequest(
     async (username: string, password: string) => {
@@ -89,7 +92,9 @@ const Login: FC = () => {
         setToken(token);
         message.success('登录成功');
         // 登录成功后，跳转到首页
-        navigate(routePath.MANAGE_LIST);
+        // navigate(routePath.MANAGE_LIST);
+        // 立即加载用户信息到Redux store
+        loadUserInfo();
       },
     }
   );

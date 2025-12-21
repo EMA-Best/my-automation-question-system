@@ -8,6 +8,7 @@ import { getUserInfoService } from '../services/user';
 import useGetUserInfo from './useGetUserInfo';
 import { useDispatch } from 'react-redux';
 import { loginReducer } from '../store/userReducer';
+// import { getToken } from '../utils/user-token';
 
 function useLoadUserData() {
   // 定义是否在等待用户数据加载完成
@@ -29,17 +30,30 @@ function useLoadUserData() {
 
   // 从redux store中获取用户信息 判断是否存在username
   const { username } = useGetUserInfo();
-  // 当username变化时，触发获取用户信息的ajax请求
+
+  // 组件挂载时或username变化时，检查并加载用户信息
   useEffect(() => {
-    // 只有当username存在时，才触发获取用户信息的ajax请求
+    // 如果已经有用户名，说明用户信息已经加载完成
+    console.log('username：', username);
+
     if (username) {
       setWaitingUserData(false);
       return;
     }
     run();
+
+    // 检查是否有token
+    // const token = getToken();
+    // if (token) {
+    //   // 有token但没有用户名，说明刚登录成功，需要加载用户信息
+    //   run();
+    // } else {
+    //   // 没有token也没有用户名，说明未登录，不需要加载用户信息
+    //   setWaitingUserData(false);
+    // }
   }, [username]);
 
-  return { waitingUserData };
+  return { waitingUserData, loadUserInfo: run };
 }
 
 export default useLoadUserData;
