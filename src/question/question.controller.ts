@@ -9,46 +9,65 @@ import {
   Query,
   Request,
 } from '@nestjs/common';
-import { QuestionService } from './question.service';
+import {
+  QuestionService,
+  FindAllListParams,
+  CountAllParams,
+} from './question.service';
 import { QuestionDto } from './dto/question.dto';
 import { Public } from 'src/auth/decorators/public.decorator';
+
+// 用户类型定义
+export interface User {
+  username: string;
+}
 
 @Controller('question')
 export class QuestionController {
   // 依赖注入问题服务
   constructor(private readonly questionService: QuestionService) {}
 
+  // NestJS的 @Query() 装饰器默认将所有查询参数解析为字符串类型
   @Get()
   async findAll(
-    @Query('keyword') keyword: string,
-    @Query('pageNum') pageNum: string,
-    @Query('pageSize') pageSize: string,
-    @Query('isDeleted') isDeleted: boolean = false,
-    @Query('isStar') isStar: boolean = false,
-    @Request() req,
+    @Query('keyword') keyword: string = '',
+    @Query('pageNum') pageNum: string = '1',
+    @Query('pageSize') pageSize: string = '10',
+    @Query('isDeleted') isDeleted: string = 'false',
+    @Query('isStar') isStar: string = 'false',
+    @Request() req: { user: User },
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    // 将字符串转换为布尔值
+    const boolIsDeleted = isDeleted === 'true';
+    const boolIsStar = isStar === 'true';
+
+    console.log('isStar string:', isStar);
+    console.log('isStar boolean:', boolIsStar);
+    console.log('typeof isStar:', typeof boolIsStar);
+
     const { username } = req.user;
     // 将字符串转换为数字
-    const numPageNum = pageNum ? parseInt(pageNum, 10) : 1;
-    const numPageSize = pageSize ? parseInt(pageSize, 10) : 10;
-    const list = await this.questionService.findAllList({
+    const numPageNum = parseInt(pageNum, 10);
+    const numPageSize = parseInt(pageSize, 10);
+
+    const findParams: FindAllListParams = {
       keyword,
       pageNum: numPageNum,
       pageSize: numPageSize,
-      isDeleted,
-      isStar,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      isDeleted: boolIsDeleted,
+      isStar: boolIsStar,
       author: username,
-    });
+    };
 
-    const count = await this.questionService.countAll({
+    const countParams: CountAllParams = {
       keyword,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       author: username,
-      isDeleted,
-      isStar,
-    });
+      isDeleted: boolIsDeleted,
+      isStar: boolIsStar,
+    };
+
+    const list = await this.questionService.findAllList(findParams);
+    const count = await this.questionService.countAll(countParams);
 
     return {
       list,
@@ -63,18 +82,14 @@ export class QuestionController {
   }
 
   @Post()
-  async create(@Request() req) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+  async create(@Request() req: { user: User }) {
     const { username } = req.user;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return await this.questionService.create(username);
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string, @Request() req) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+  async delete(@Param('id') id: string, @Request() req: { user: User }) {
     const { username } = req.user;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return await this.questionService.delete(id, username);
   }
 
@@ -82,29 +97,26 @@ export class QuestionController {
   async update(
     @Param('id') id: string,
     @Body() questionDto: QuestionDto,
-    @Request() req,
+    @Request() req: { user: User },
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const { username } = req.user;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    // 类型转换，确保QuestionDto包含必要的字段
     return await this.questionService.update(id, questionDto as any, username);
   }
 
   @Delete()
-  async deleteMany(@Body() body, @Request() req) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+  async deleteMany(
+    @Body() body: { ids: string[] },
+    @Request() req: { user: User },
+  ) {
     const { username } = req.user;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { ids = [] } = body;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return await this.questionService.deleteMany(ids, username);
   }
 
   @Post('duplicate/:id')
-  async duplicate(@Param('id') id: string, @Request() req) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+  async duplicate(@Param('id') id: string, @Request() req: { user: User }) {
     const { username } = req.user;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return await this.questionService.duplicate(id, username);
   }
 }
