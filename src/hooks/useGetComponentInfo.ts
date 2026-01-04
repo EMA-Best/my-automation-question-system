@@ -1,3 +1,8 @@
+/**
+ * @description 从Redux store中获取问卷组件信息
+ * @returns 组件信息
+ */
+
 import { useSelector } from 'react-redux';
 import { StateType } from '../store';
 import { ComponentsStateType } from '../store/componentsReducer';

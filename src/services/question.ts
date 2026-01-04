@@ -54,6 +54,32 @@ export async function duplicateQuestionService(
   return data;
 }
 
+// 导出问卷（后端导出，返回 JSON 数据）
+export async function exportQuestionService(id: string): Promise<ResDataType> {
+  const url = `/api/question/${id}/export`;
+  const data = (await axios.get(url)) as ResDataType;
+  return data;
+}
+
+// 导入问卷（后端导入，创建一份新问卷）
+export async function importQuestionService(
+  payload: unknown
+): Promise<ResDataType> {
+  const url = `/api/question/import`;
+  const data = (await axios.post(url, payload)) as ResDataType;
+  return data;
+}
+
+// 覆盖导入到当前问卷
+export async function importIntoQuestionService(
+  id: string,
+  payload: unknown
+): Promise<ResDataType> {
+  const url = `/api/question/${id}/import`;
+  const data = (await axios.post(url, payload)) as ResDataType;
+  return data;
+}
+
 // 批量删除问卷
 export async function deleteQuestionService(
   ids: string[]

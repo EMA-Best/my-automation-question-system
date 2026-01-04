@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import styles from './index.module.scss';
-import { Space, Button, Divider, message } from 'antd';
+import { Space, Button, Divider } from 'antd';
 import {
   PlusOutlined,
   BarsOutlined,
@@ -41,7 +41,7 @@ const ManageLayout: FC = () => {
     manual: true, // 手动触发
     onSuccess: (result) => {
       navigate(`/question/edit/${result.id || result._id}`);
-      message.success('新建问卷成功');
+      // message.success('新建问卷成功');
     },
   });
   // const handleCreate = async () => {

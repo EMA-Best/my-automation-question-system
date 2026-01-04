@@ -13,22 +13,44 @@ const EditTitle: FC = () => {
 
   // 标题是否正在编辑状态
   const [editState, setEditState] = useState(false);
+  // 使用本地状态管理输入框的值，避免受控组件问题
+  const [inputValue, setInputValue] = useState(title);
 
-  // 处理标题输入框的变化 同步Redux状态
+  // 处理标题输入框的变化
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
-    const newTitle = e.target.value.trim();
-    if (!newTitle) return;
-    dispatch(changePageTitle(newTitle));
+    setInputValue(e.target.value);
+  }
+
+  // 处理失焦和回车，同步到 Redux
+  function handleBlur() {
+    const trimmedTitle = inputValue.trim();
+    if (trimmedTitle) {
+      dispatch(changePageTitle(trimmedTitle));
+    } else {
+      // 如果为空，恢复原来的标题
+      setInputValue(title);
+    }
+    setEditState(false);
+  }
+
+  function handlePressEnter() {
+    handleBlur();
+  }
+
+  // 进入编辑状态时，同步当前标题到本地状态
+  function handleEdit() {
+    setInputValue(title);
+    setEditState(true);
   }
 
   // 在编辑状态下显示输入框
   if (editState) {
     return (
       <Input
-        value={title}
+        value={inputValue}
         onChange={handleChange}
-        onPressEnter={() => setEditState(false)}
-        onBlur={() => setEditState(false)}
+        onPressEnter={handlePressEnter}
+        onBlur={handleBlur}
       />
     );
   }
@@ -36,11 +58,7 @@ const EditTitle: FC = () => {
   return (
     <Space>
       <Title>{title}</Title>
-      <Button
-        icon={<EditOutlined />}
-        onClick={() => setEditState(true)}
-        type="text"
-      />
+      <Button icon={<EditOutlined />} onClick={handleEdit} type="text" />
     </Space>
   );
 };

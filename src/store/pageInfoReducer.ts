@@ -3,8 +3,8 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 export type PageInfoType = {
   title: string;
   desc?: string;
-  js?: '';
-  css?: '';
+  js?: string;
+  css?: string;
   isPublished?: boolean;
 };
 

@@ -1,0 +1,22 @@
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+node_modules/
+dist/
+build/
+coverage/
+*.log
+*.tmp
+.env
+.DS_Store
+.vscode/
+.git/
+.cache/
+yarn.lock
+package-lock.json
+*.test.*
+*.spec.*
+/.idea/
+# 忽略.github目录
+.github/
+# 忽略.gitignore文件
+.gitignore
+
