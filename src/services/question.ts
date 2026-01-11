@@ -38,6 +38,7 @@ export async function getQuestionListService(
 // 修改/删除单个问卷
 export async function updateQuestionService(
   id: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options: { [key: string]: any }
 ): Promise<ResDataType> {
   const url = `/api/question/${id}`;
@@ -86,5 +87,19 @@ export async function deleteQuestionService(
 ): Promise<ResDataType> {
   const url = `/api/question`;
   const data = (await axios.delete(url, { data: { ids } })) as ResDataType;
+  return data;
+}
+
+// AI生成问卷
+export async function aiGenerateQuestionService(
+  prompt: string
+): Promise<ResDataType> {
+  const url = `/api/question/ai-generate`;
+  // AI生成问卷是耗时操作，增加超时时间到30秒
+  const data = (await axios.post(
+    url,
+    { prompt },
+    { timeout: 60 * 1000 }
+  )) as ResDataType;
   return data;
 }

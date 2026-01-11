@@ -9,6 +9,7 @@ import EditSaveButton from './EditSaveButton';
 import EditPublishButton from './EditPublishButton';
 import EditExportButton from './EditExportButton';
 import EditImportButton from './EditImportButton';
+import EditAIGenerateButton from './EditAIGenerateButton';
 
 const EditHeader: FC = () => {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ const EditHeader: FC = () => {
         <div className={styles.right}>
           <Space>
             <EditImportButton />
+            <EditAIGenerateButton />
             <EditExportButton />
             <EditSaveButton />
             <EditPublishButton />

@@ -49,10 +49,9 @@ const List: FC = () => {
       manual: true, // 手动触发加载
       onSuccess: (result) => {
         console.log('result: ', result);
-
-        const { list = [], total = 0 } = result;
+        const { list = [], count = 0 } = result;
         setLists(lists.concat(list)); // 累计
-        setTotal(total);
+        setTotal(count);
         setPageNum(pageNum + 1);
       },
     }
@@ -75,6 +74,9 @@ const List: FC = () => {
 
       const { bottom } = domRect;
 
+      console.log('bottom: ', bottom);
+      console.log('window.innerHeight: ', window.innerHeight);
+
       if (bottom <= window.innerHeight) {
         loadMore();
         setStarted(true); // 加载数据后，设置为true
@@ -93,6 +95,7 @@ const List: FC = () => {
 
   // 当页面滚动时，要尝试加载更多
   useEffect(() => {
+    console.log('haveMoreData: ', haveMoreData);
     if (haveMoreData) {
       window.addEventListener('scroll', tryLoadMore);
     }

@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useEffect } from 'react';
 import { OptionType, QuestionCheckboxPropsType } from './interface';
 import { Button, Checkbox, Form, Input, Space } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
@@ -8,20 +8,29 @@ const PropComponent: FC<QuestionCheckboxPropsType> = (props) => {
   const { title, isVertical, options = [], onChange, disabled } = props;
   const [form] = Form.useForm();
 
+  // 监听 props 变化，更新表单值
+  useEffect(() => {
+    form.setFieldsValue({
+      title,
+      isVertical,
+      options,
+    });
+  }, [title, isVertical, options, form]);
+
   function handleValuesChange() {
     // 调用 onChange
     if (onChange == null) return;
     // 从表单中获取最新值
-    const newValus = form.getFieldsValue();
+    const newValues = form.getFieldsValue();
 
-    const { options = [] } = newValus;
+    const { options = [] } = newValues;
     // 遍历添加value值 因为是空的 所以需要添加
     options.forEach((opt: OptionType) => {
       if (opt.value) return;
       opt.value = nanoid(5);
     });
     // 调用 onChange
-    onChange(newValus);
+    onChange(newValues);
   }
 
   return (
