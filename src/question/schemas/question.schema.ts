@@ -38,8 +38,11 @@ export class Question {
     title: string; // 组件标题
     isHidden: boolean; // 组件是否隐藏
     isLocked: boolean; // 组件是否锁定
-    props: object; // 组件属性
+    props: Record<string, unknown>; // 组件属性
   }[];
 }
 
 export const QuestionSchema = SchemaFactory.createForClass(Question);
+
+// 常用筛选条件的联合索引（列表查询/统计查询）
+QuestionSchema.index({ author: 1, isDeleted: 1, isStar: 1, _id: -1 });

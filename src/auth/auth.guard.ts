@@ -9,6 +9,7 @@ import { jwtConstants } from './constants';
 import { Request } from 'express';
 import { IS_PUBLIC_KEY } from './decorators/public.decorator';
 import { Reflector } from '@nestjs/core';
+import { IS_OPTIONAL_AUTH_KEY } from './decorators/optional-auth.decorator';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -22,6 +23,10 @@ export class AuthGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
+    const isOptionalAuth = this.reflector.getAllAndOverride<boolean>(
+      IS_OPTIONAL_AUTH_KEY,
+      [context.getHandler(), context.getClass()],
+    );
     // 不需要进行认证的路由 直接放行
     if (isPublic) {
       // 💡 See this condition
@@ -32,6 +37,8 @@ export class AuthGuard implements CanActivate {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const token = this.extractTokenFromHeader(request);
     if (!token) {
+      // 可选鉴权：没 token 也放行（但不会有 req.user）
+      if (isOptionalAuth) return true;
       throw new UnauthorizedException('未登录');
     }
     try {
