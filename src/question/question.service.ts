@@ -514,25 +514,39 @@ export class QuestionService {
   }
 
   async duplicate(id: string, author: string): Promise<QuestionDocument> {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new NotFoundException('问卷不存在');
+    }
+
     const question = await this.questionModel.findById(id);
 
     if (!question) {
-      throw new Error('Question not found');
+      throw new NotFoundException('问卷不存在');
     }
 
+    // 注意：不要把 timestamps 字段（createdAt/updatedAt）复制过去
+    // 否则新问卷会保留旧的创建时间。
+    const { desc = '', js = '', css = '', componentList = [] } = question;
+
+    const duplicatedComponentList = componentList.map((c) => ({
+      fe_id: nanoid(),
+      type: c.type,
+      title: c.title,
+      isHidden: c.isHidden,
+      isLocked: c.isLocked,
+      props: c.props ?? {},
+    }));
+
     const newQuestion = new this.questionModel({
-      ...question.toObject(),
-      _id: new mongoose.Types.ObjectId(), // 新的mongodb ObjectId
       title: question.title + ' 副本',
+      desc,
+      js,
+      css,
       author,
       isPublished: false,
       isStar: false,
-      componentList: question.componentList.map((item) => {
-        return {
-          ...item,
-          fe_id: nanoid(), // 生成新的fe_id
-        };
-      }),
+      isDeleted: false,
+      componentList: duplicatedComponentList,
     });
 
     return await newQuestion.save();

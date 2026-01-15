@@ -8,13 +8,13 @@ export type QuestionDocument = HydratedDocument<Question>;
 })
 export class Question {
   @Prop({ required: true })
-  title: string; // 问题标题
+  title: string; // 问卷标题
 
   @Prop()
-  desc: string; // 问题描述
+  desc: string; // 问卷描述
 
   @Prop({ required: true })
-  author: string; // 问题作者
+  author: string; // 问卷作者
 
   @Prop()
   js: string; // 相关的JavaScript代码片段
