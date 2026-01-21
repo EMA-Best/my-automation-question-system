@@ -19,4 +19,11 @@ export class UserService {
   async findOne(username: string, password: string) {
     return await this.userModel.findOne({ username, password });
   }
+
+  async updateLastLoginAt(userId: string) {
+    return await this.userModel.updateOne(
+      { _id: userId },
+      { $set: { lastLoginAt: new Date() } },
+    );
+  }
 }

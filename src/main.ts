@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { TransformInterceptor } from './transform/transform.interceptor';
 import { HttpExceptionFilter } from './http-exception/http-exception.filter';
 import { json, urlencoded } from 'express';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,6 +15,13 @@ async function bootstrap() {
   app.setGlobalPrefix('api'); // 路由全局前缀
   app.useGlobalInterceptors(new TransformInterceptor()); // 全局拦截器
   app.useGlobalFilters(new HttpExceptionFilter()); // 全局异常过滤器
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
   app.enableCors(); // 允许跨域请求
   await app.listen(process.env.PORT ?? 3005);
 }

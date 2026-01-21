@@ -10,6 +10,10 @@ import mongoose, { Model } from 'mongoose';
 import { nanoid } from 'nanoid';
 import type { QuestionDto } from './dto/question.dto';
 import { AIService, type AIGenerateStreamHandlers } from '../ai/ai.service';
+import {
+  QuestionReview,
+  type QuestionReviewDocument,
+} from '../review/schemas/question-review.schema';
 
 // 仅暴露我们关心且可移植的 update 结果结构（避免直接泄漏 mongodb 驱动类型）
 export type QuestionUpdateResult = {
@@ -59,6 +63,8 @@ export class QuestionService {
     // 依赖注入问题模型
     @InjectModel(Question.name)
     private readonly questionModel: Model<QuestionDocument>,
+    @InjectModel(QuestionReview.name)
+    private readonly questionReviewModel: Model<QuestionReviewDocument>,
     // 依赖注入 AI 服务
     private readonly aiService: AIService,
   ) {}
@@ -68,6 +74,8 @@ export class QuestionService {
       title: '问卷标题' + Date.now(),
       desc: '问卷描述',
       author: username,
+      auditStatus: 'Draft',
+      auditUpdatedAt: new Date(),
       componentList: [
         {
           fe_id: nanoid(),
@@ -78,6 +86,55 @@ export class QuestionService {
       ],
     });
     return await question.save();
+  }
+
+  async submitReview(id: string, username: string) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new NotFoundException('问卷不存在');
+    }
+
+    const question = await this.questionModel.findOne({
+      _id: id,
+      author: username,
+    });
+    if (!question) {
+      throw new NotFoundException('问卷不存在');
+    }
+
+    if (question.isDeleted) {
+      throw new BadRequestException('问卷已删除，无法提交审核');
+    }
+
+    if (question.isPublished) {
+      throw new BadRequestException('已发布问卷不支持提交审核');
+    }
+
+    const currentStatus = question.auditStatus ?? 'Draft';
+    if (currentStatus === 'PendingReview') {
+      throw new BadRequestException('问卷已在审核中');
+    }
+
+    question.auditStatus = 'PendingReview';
+    question.auditReason = '';
+    question.auditUpdatedAt = new Date();
+    await question.save();
+
+    const review = new this.questionReviewModel({
+      questionId: question._id,
+      author: question.author,
+      submitter: username,
+      status: 'PendingReview',
+      reason: '',
+      submittedAt: new Date(),
+      reviewedAt: null,
+    });
+
+    const saved = await review.save();
+
+    return {
+      ok: true,
+      reviewId: saved._id,
+    };
   }
 
   async aiGenerateQuestionStream(
@@ -123,8 +180,21 @@ export class QuestionService {
   }
 
   async delete(id: string, author: string): Promise<QuestionDocument | null> {
-    // return await this.questionModel.findByIdAndDelete(id);
-    return await this.questionModel.findOneAndDelete({ _id: id, author });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new NotFoundException('问卷不存在');
+    }
+
+    // 软删除：写入删除审计字段，供管理员回收站展示
+    return await this.questionModel.findOneAndUpdate(
+      { _id: id, author },
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+        deletedBy: author,
+        deleteReason: '',
+      },
+      { new: true },
+    );
   }
 
   async update(
@@ -133,6 +203,7 @@ export class QuestionService {
     author: string,
   ): Promise<QuestionUpdateResult> {
     const updatePayload: QuestionDto = {};
+    const auditPayload: Record<string, unknown> = {};
 
     if (typeof questionDto !== 'object' || questionDto == null) {
       const res = await this.questionModel.updateOne(
@@ -167,6 +238,18 @@ export class QuestionService {
     }
     if (typeof record.isDeleted === 'boolean') {
       updatePayload.isDeleted = record.isDeleted;
+      if (record.isDeleted) {
+        auditPayload.deletedAt = new Date();
+        auditPayload.deletedBy = author;
+        if (typeof record.deleteReason === 'string') {
+          auditPayload.deleteReason = record.deleteReason;
+        } else {
+          auditPayload.deleteReason = '';
+        }
+      } else {
+        auditPayload.restoredAt = new Date();
+        auditPayload.restoredBy = author;
+      }
     }
 
     if (record.componentList != null) {
@@ -180,7 +263,7 @@ export class QuestionService {
         _id: id,
         author,
       },
-      updatePayload,
+      { ...updatePayload, ...auditPayload },
     );
 
     return {
@@ -506,11 +589,23 @@ export class QuestionService {
     ids: string[],
     author: string,
   ): Promise<{ acknowledged: boolean; deletedCount: number }> {
-    const res = await this.questionModel.deleteMany({
-      _id: { $in: ids },
-      author,
-    });
-    return res;
+    const now = new Date();
+    const res = await this.questionModel.updateMany(
+      {
+        _id: { $in: ids },
+        author,
+      },
+      {
+        isDeleted: true,
+        deletedAt: now,
+        deletedBy: author,
+        deleteReason: '',
+      },
+    );
+    return {
+      acknowledged: res.acknowledged,
+      deletedCount: res.modifiedCount,
+    };
   }
 
   async duplicate(id: string, author: string): Promise<QuestionDocument> {

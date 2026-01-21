@@ -8,6 +8,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { AnswerModule } from './answer/answer.module';
 import { StatModule } from './stat/stat.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { StatModule } from './stat/stat.module';
     AuthModule,
     AnswerModule,
     StatModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

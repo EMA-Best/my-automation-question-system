@@ -17,6 +17,12 @@ export class AuthService {
       throw new HttpException('用户名或密码错误', HttpStatus.UNAUTHORIZED);
     }
 
+    if (user.status === 'disabled') {
+      throw new HttpException('账号已被禁用', HttpStatus.FORBIDDEN);
+    }
+
+    await this.userService.updateLastLoginAt(String(user._id));
+
     /**
      * toObject()方法将文档变成普通的JavaScript对象
      * 利用对象结构的语法 从用户对象中提取密码字段 其他字段使用...收集到userInfo对象中

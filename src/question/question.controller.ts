@@ -148,6 +148,13 @@ export class QuestionController {
     return await this.questionService.duplicate(id, username);
   }
 
+  // 提交审核（迭代B）
+  @Post(':id/submit-review')
+  async submitReview(@Param('id') id: string, @Request() req: { user: User }) {
+    const { username } = req.user;
+    return await this.questionService.submitReview(id, username);
+  }
+
   @Post('ai-generate')
   async aiGenerate(
     @Body() aiGenerateDto: AIGenerateQuestionDto,

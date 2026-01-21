@@ -22,6 +22,30 @@ export class User {
     default: '',
   })
   nickname: string;
+
+  @Prop({
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user',
+    index: true,
+  })
+  role: 'user' | 'admin';
+
+  @Prop({
+    type: String,
+    enum: ['active', 'disabled'],
+    default: 'active',
+    index: true,
+  })
+  status: 'active' | 'disabled';
+
+  @Prop({
+    type: Date,
+    default: null,
+  })
+  lastLoginAt?: Date | null;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+UserSchema.index({ role: 1, status: 1 });

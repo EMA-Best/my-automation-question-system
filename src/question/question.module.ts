@@ -4,6 +4,7 @@ import { QuestionService } from './question.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Question, QuestionSchema } from './schemas/question.schema';
 import { AIModule } from '../ai/ai.module';
+import { ReviewModule } from '../review/review.module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { AIModule } from '../ai/ai.module';
       { schema: QuestionSchema, name: Question.name },
     ]),
     AIModule,
+    ReviewModule,
   ],
   exports: [QuestionService],
   controllers: [QuestionController],

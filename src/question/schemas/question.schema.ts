@@ -31,6 +31,54 @@ export class Question {
   @Prop({ default: false })
   isDeleted: boolean; // 是否删除
 
+  // -----------------------------
+  // 删除/恢复审计（回收站）
+  // -----------------------------
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
+
+  // 约定：存 username（与 author 一致）；通过 users 表 lookup 补全昵称
+  @Prop({ type: String, default: '', index: true })
+  deletedBy?: string;
+
+  @Prop({ type: String, default: '' })
+  deleteReason?: string;
+
+  @Prop({ type: Date, default: null })
+  restoredAt?: Date | null;
+
+  @Prop({ type: String, default: '' })
+  restoredBy?: string;
+
+  // -----------------------------
+  // 审核流（迭代B）
+  // -----------------------------
+  @Prop({
+    type: String,
+    enum: ['Draft', 'PendingReview', 'Approved', 'Rejected'],
+    default: 'Draft',
+    index: true,
+  })
+  auditStatus: 'Draft' | 'PendingReview' | 'Approved' | 'Rejected';
+
+  @Prop({ default: '' })
+  auditReason?: string;
+
+  @Prop({ type: Date, default: null, index: true })
+  auditUpdatedAt?: Date | null;
+
+  // -----------------------------
+  // 运营字段（迭代C 会用到，先占位）
+  // -----------------------------
+  @Prop({ default: false })
+  featured?: boolean;
+
+  @Prop({ default: false })
+  pinned?: boolean;
+
+  @Prop({ type: Date, default: null })
+  pinnedAt?: Date | null;
+
   @Prop()
   componentList: {
     fe_id: string; // 前端组件唯一标识 需要前端控制 由前端生成
@@ -46,3 +94,10 @@ export const QuestionSchema = SchemaFactory.createForClass(Question);
 
 // 常用筛选条件的联合索引（列表查询/统计查询）
 QuestionSchema.index({ author: 1, isDeleted: 1, isStar: 1, _id: -1 });
+
+// 回收站常用索引
+QuestionSchema.index({ isDeleted: 1, deletedAt: -1, _id: -1 });
+QuestionSchema.index({ deletedBy: 1, deletedAt: -1 });
+
+// 审核队列索引
+QuestionSchema.index({ auditStatus: 1, auditUpdatedAt: -1 });
