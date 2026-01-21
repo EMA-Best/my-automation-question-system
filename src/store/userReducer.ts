@@ -1,15 +1,18 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import type { UserRole } from '../types/user';
 
 // 用户状态类型
 export type UserStateType = {
   username: string;
   nickname: string;
+  role: UserRole;
 };
 
 // 初始用户状态
 const INIT_STATE: UserStateType = {
   username: '',
   nickname: '',
+  role: 'user',
 };
 
 export const userSlice = createSlice({

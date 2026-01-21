@@ -7,6 +7,7 @@
 import { useSearchParams } from 'react-router-dom';
 import { useRequest } from 'ahooks';
 import { getQuestionListService } from '../services/question';
+import type { QuestionListRes } from '../services/question';
 import {
   LIST_SEARCH_PARAM_KEY,
   LIST_PAGE_NUM_PARAM_KEY,
@@ -33,7 +34,7 @@ const useLoadQuestionListData = (options: Partial<SearchOption> = {}) => {
   console.log('typeof isStar: ', typeof isStar);
 
   // 定义useRequestion函数的第一个函数参数
-  const getQuestionListServiceParams = async () => {
+  const getQuestionListServiceParams = async (): Promise<QuestionListRes> => {
     const data = await getQuestionListService({
       keyword,
       isStar,

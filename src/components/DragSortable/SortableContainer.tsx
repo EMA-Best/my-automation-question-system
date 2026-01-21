@@ -15,7 +15,7 @@ import {
 
 type PropsType = {
   children: JSX.Element | JSX.Element[];
-  items: Array<{ id: string; [key: string]: any }>;
+  items: Array<{ id: string }>;
   // eslint-disable-next-line no-unused-vars
   onDragEnd: (oldIndex: number, newIndex: number) => void;
 };
@@ -33,8 +33,8 @@ const SortableContainer: FC<PropsType> = (props) => {
     const { active, over } = e;
     if (over == null) return;
     if (active.id !== over.id) {
-      const oldIndex = items.findIndex((c) => c.fe_id === active.id);
-      const newIndex = items.findIndex((c) => c.fe_id === over.id);
+      const oldIndex = items.findIndex((c) => c.id === active.id);
+      const newIndex = items.findIndex((c) => c.id === over.id);
       onDragEnd(oldIndex, newIndex);
     }
   }

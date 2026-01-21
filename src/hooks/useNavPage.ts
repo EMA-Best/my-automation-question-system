@@ -10,7 +10,7 @@ import { isLoginOrRegister, isNoNeedUserInfo } from '../router';
 import { routePath } from '../router/index';
 
 function useNavPage(waitingUserData: boolean) {
-  const { username } = useGetUserInfo();
+  const { username, role } = useGetUserInfo();
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
@@ -19,6 +19,15 @@ function useNavPage(waitingUserData: boolean) {
 
     // 已经登录了
     if (username) {
+      // 角色权限：非管理员禁止访问管理后台
+      if (
+        (pathname.startsWith('/manage/reviews') ||
+          pathname.startsWith('/manage/users')) &&
+        role !== 'admin'
+      ) {
+        navigate(routePath.FORBIDDEN);
+        return;
+      }
       // 去的登录页或者注册页 就跳转到管理问卷列表页
       if (isLoginOrRegister(pathname)) {
         navigate(routePath.MANAGE_LIST);
@@ -33,7 +42,7 @@ function useNavPage(waitingUserData: boolean) {
       // 跳转到登录页
       navigate(routePath.LOGIN);
     }
-  }, [username, pathname, waitingUserData]);
+  }, [username, role, pathname, waitingUserData]);
 }
 
 export default useNavPage;

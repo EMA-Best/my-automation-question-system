@@ -15,12 +15,15 @@ import { ExclamationCircleOutlined } from '@ant-design/icons';
 import styles from '../common.module.scss';
 import ListSearch from '../../../components/ListSearch';
 import useLoadQuestionListData from '../../../hooks/useLoadQuestionListData';
+import useGetUserInfo from '../../../hooks/useGetUserInfo';
+import AdminTrash from '../AdminTrash';
 import {
   deleteQuestionService,
   updateQuestionService,
 } from '../../../services/question';
 import { formatDateTime } from '../../../utils/formatDateTime';
 import ListPage from '../../../components/ListPage';
+import type { QuestionListItem } from '../../../services/question';
 
 const questionColumns = [
   {
@@ -66,7 +69,7 @@ const { Title } = Typography;
 
 const { confirm } = Modal;
 
-const Trash: FC = () => {
+const TrashUser: FC = () => {
   useTitle('小伦问卷 - 回收站');
   // refresh用于重新刷新数据
   const { loading, data, refresh } = useLoadQuestionListData({
@@ -74,7 +77,7 @@ const Trash: FC = () => {
   });
   // console.log('trash data: ', data);
 
-  const { list = [], count: total } = data || {};
+  const { list, count: total } = data ?? { list: [], count: 0 };
   // console.log('total：', total);
 
   // 记录选中的问卷id
@@ -159,7 +162,7 @@ const Trash: FC = () => {
         dataSource={list}
         columns={questionColumns}
         pagination={false}
-        rowKey={(q: any) => q._id}
+        rowKey={(q: QuestionListItem) => q._id}
         rowSelection={{
           type: 'checkbox',
           onChange: (selectedRowKeys) => {
@@ -195,6 +198,17 @@ const Trash: FC = () => {
       </div>
     </>
   );
+};
+
+const Trash: FC = () => {
+  const { role } = useGetUserInfo();
+  const isAdmin = role === 'admin';
+
+  if (isAdmin) {
+    return <AdminTrash />;
+  }
+
+  return <TrashUser />;
 };
 
 export default Trash;

@@ -1,21 +1,33 @@
-import { FC } from 'react';
+import { FC, useCallback } from 'react';
 import { Typography, Space, Button, Form, Input, message } from 'antd';
-import { UserAddOutlined } from '@ant-design/icons';
+import type { FormProps } from 'antd';
+import {
+  LockOutlined,
+  SmileOutlined,
+  UserAddOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
 import { useTitle, useRequest } from 'ahooks';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import styles from './index.module.scss';
 import { routePath } from '../../router/index';
 import { registerService } from '../../services/user';
-import { useNavigate } from 'react-router-dom';
 
 const { Title } = Typography;
+
+type RegisterFormValues = {
+  username: string;
+  password: string;
+  confirmPassword: string;
+  nickname?: string;
+};
 
 const Register: FC = () => {
   useTitle('小伦问卷 - 注册');
   const navigate = useNavigate();
   // 注册用户
-  const { run: handleRegister } = useRequest(
-    async (userInfo: any) => {
+  const { run: handleRegister, loading } = useRequest(
+    async (userInfo: RegisterFormValues) => {
       const { username, password, nickname } = userInfo;
       await registerService(username, password, nickname);
     },
@@ -29,99 +41,126 @@ const Register: FC = () => {
     }
   );
 
-  // 表单提交成功回调
-  const onFinish = (values: any) => {
-    handleRegister(values); // 执行注册请求
-  };
-  // 表单提交失败回调
-  const onFinishFailed = (errorInfo: any) => {
+  const onFinish = useCallback<
+    NonNullable<FormProps<RegisterFormValues>['onFinish']>
+  >(
+    (values) => {
+      handleRegister(values);
+    },
+    [handleRegister]
+  );
+
+  const onFinishFailed = useCallback<
+    NonNullable<FormProps<RegisterFormValues>['onFinishFailed']>
+  >((errorInfo) => {
     console.log(errorInfo);
-  };
+  }, []);
+
   return (
     <div className={styles.container}>
-      {/* 标题部分 */}
-      <div className={styles.title}>
-        <Space>
-          <Title level={2}>
+      <div className={styles.header}>
+        <Space size={10} align="center">
+          <span className={styles.headerIcon}>
             <UserAddOutlined />
-          </Title>
-          <Title level={2}>注册新用户</Title>
+          </span>
+          <div>
+            <Title level={3} className={styles.title}>
+              创建账号
+            </Title>
+            <div className={styles.subTitle}>注册后即可创建并管理你的问卷</div>
+          </div>
         </Space>
       </div>
-      {/* 表单部分 */}
-      <div>
-        <Form
-          labelCol={{ span: 10 }}
-          wrapperCol={{ span: 24 }}
-          onFinish={onFinish}
-          onFinishFailed={onFinishFailed}
-          style={{ width: 400 }}
+
+      <Form
+        layout="vertical"
+        size="large"
+        onFinish={onFinish}
+        onFinishFailed={onFinishFailed}
+      >
+        <Form.Item
+          label="用户名"
+          name="username"
+          rules={[
+            { required: true, message: '请输入用户名' },
+            {
+              type: 'string',
+              min: 6,
+              max: 10,
+              message: '长度必须在6到10个字符之间',
+            },
+            {
+              pattern: /^[a-zA-Z0-9_]+$/,
+              message: '只能包含字母、数字和下划线',
+            },
+          ]}
         >
-          <Form.Item
-            label="用户名"
-            name="username"
-            rules={[
-              { required: true, message: '请输入用户名' },
-              {
-                type: 'string',
-                min: 6,
-                max: 10,
-                message: '长度必须在6到10个字符之间',
+          <Input
+            prefix={<UserOutlined />}
+            placeholder="6-10 位字母/数字/下划线"
+            allowClear
+            autoComplete="username"
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="密码"
+          name="password"
+          rules={[
+            { required: true, message: '请输入密码' },
+            {
+              type: 'string',
+              min: 6,
+              max: 12,
+              message: '密码长度必须在6到12个字符之间',
+            },
+          ]}
+        >
+          <Input.Password
+            prefix={<LockOutlined />}
+            placeholder="6-12 位密码"
+            autoComplete="new-password"
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="确认密码"
+          name="confirmPassword"
+          dependencies={['password']}
+          rules={[
+            { required: true, message: '请输入确认密码' },
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                if (!value || getFieldValue('password') === value) {
+                  return Promise.resolve();
+                }
+                return Promise.reject(new Error('两次输入密码不一致'));
               },
-              {
-                pattern: /^[a-zA-Z0-9_]+$/,
-                message: '只能包含字母、数字和下划线',
-              },
-            ]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="密码"
-            name="password"
-            rules={[
-              { required: true, message: '请输入密码' },
-              {
-                type: 'string',
-                min: 6,
-                max: 12,
-                message: '长度必须在6到12个字符之间',
-              },
-            ]}
-          >
-            <Input.Password />
-          </Form.Item>
-          <Form.Item
-            label="确认密码"
-            name="confirmPassword"
-            dependencies={['password']} //依赖password字段 当password字段发生变化时，confirmPassword字段也会重新校验
-            rules={[
-              { required: true, message: '请输入确认密码' },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue('password') === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error('两次输入密码不一致'));
-                },
-              }),
-            ]}
-          >
-            <Input.Password />
-          </Form.Item>
-          <Form.Item label="昵称" name="nickname">
-            <Input />
-          </Form.Item>
-          <Form.Item wrapperCol={{ offset: 10, span: 24 }}>
-            <Space>
-              <Button type="primary" htmlType="submit">
-                注册
-              </Button>
-              <Link to={routePath.LOGIN}>已有账户，去登录</Link>
-            </Space>
-          </Form.Item>
-        </Form>
-      </div>
+            }),
+          ]}
+        >
+          <Input.Password
+            prefix={<LockOutlined />}
+            placeholder="请再次输入密码"
+            autoComplete="new-password"
+          />
+        </Form.Item>
+
+        <Form.Item label="昵称（可选）" name="nickname">
+          <Input prefix={<SmileOutlined />} placeholder="用于展示" allowClear />
+        </Form.Item>
+
+        <Form.Item>
+          <Button type="primary" htmlType="submit" block loading={loading}>
+            注册
+          </Button>
+        </Form.Item>
+
+        <div className={styles.footerRow}>
+          <span className={styles.footerText}>已有账号？</span>
+          <Link to={routePath.LOGIN}>去登录</Link>
+        </div>
+      </Form>
     </div>
   );
 };

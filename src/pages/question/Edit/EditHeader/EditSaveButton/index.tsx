@@ -17,7 +17,15 @@ const EditSaveButton: FC = () => {
   const { loading, run: save } = useRequest(
     async () => {
       if (!id) return;
-      await updateQuestionService(id, { ...pageInfo, componentList });
+      // 审核字段由后端维护，避免被前端误传覆盖
+      const {
+        auditStatus: _auditStatus,
+        auditReason: _auditReason,
+        ...rest
+      } = pageInfo;
+      void _auditStatus;
+      void _auditReason;
+      await updateQuestionService(id, { ...rest, componentList });
     },
     { manual: true }
   );

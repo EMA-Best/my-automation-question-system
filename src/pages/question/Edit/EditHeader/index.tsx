@@ -7,6 +7,7 @@ import EditToolbar from './EditToolbar';
 import EditTitle from './EditTitle';
 import EditSaveButton from './EditSaveButton';
 import EditPublishButton from './EditPublishButton';
+import EditSubmitReviewButton from './EditSubmitReviewButton';
 import EditExportButton from './EditExportButton';
 import EditImportButton from './EditImportButton';
 import EditAIGenerateButton from './EditAIGenerateButton';
@@ -37,6 +38,7 @@ const EditHeader: FC = () => {
             <EditAIGenerateButton />
             <EditExportButton />
             <EditSaveButton />
+            <EditSubmitReviewButton />
             <EditPublishButton />
           </Space>
         </div>

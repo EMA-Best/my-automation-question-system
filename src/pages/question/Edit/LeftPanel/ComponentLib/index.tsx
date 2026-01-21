@@ -1,4 +1,4 @@
-import { Dispatch, FC } from 'react';
+import { FC } from 'react';
 import { componentConfGroup } from '../../../../../components/QuestionComponents';
 import type { ComponentConfigType } from '../../../../../components/QuestionComponents';
 import { Typography } from 'antd';
@@ -9,9 +9,11 @@ import { nanoid } from 'nanoid';
 
 const { Title } = Typography;
 
+type AppDispatch = typeof import('../../../../../store').default.dispatch;
+
 const getComponent = (
   component: ComponentConfigType,
-  dispatch: Dispatch<any>
+  dispatch: AppDispatch
 ) => {
   const { title, type, Component, defaultProps } = component;
 
@@ -36,7 +38,7 @@ const getComponent = (
 };
 
 const ComponentLib: FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   return (
     <>
       {componentConfGroup.map((group, index) => {

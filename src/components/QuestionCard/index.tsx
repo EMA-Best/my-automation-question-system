@@ -1,7 +1,16 @@
-import { FC, useState } from 'react';
+import { FC, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './index.module.scss';
-import { Button, Tag, Space, Divider, Popconfirm, Modal, message } from 'antd';
+import {
+  Button,
+  Tag,
+  Space,
+  Divider,
+  Popconfirm,
+  Modal,
+  Tooltip,
+  message,
+} from 'antd';
 import {
   StarOutlined,
   EditOutlined,
@@ -17,6 +26,7 @@ import {
   updateQuestionService,
 } from '../../services/question';
 import { formatDateTime } from '../../utils/formatDateTime';
+import type { AuditStatus } from '../../types/audit';
 
 // 定义问卷卡片组件的props类型
 type propsType = {
@@ -26,6 +36,8 @@ type propsType = {
   isStar: boolean;
   answerCount: number;
   createdAt: string;
+  auditStatus?: AuditStatus;
+  auditReason?: string;
 };
 
 // 解构出Modal组件的confirm方法
@@ -37,6 +49,23 @@ const QuestionCard: FC<propsType> = (props: propsType) => {
   const navigate = useNavigate();
   // 解构props中的属性值
   const { id, title, isPublished, isStar, answerCount, createdAt } = props;
+  const { auditStatus, auditReason } = props;
+
+  const auditTag = useMemo(() => {
+    if (!auditStatus) return null;
+    const map: Record<AuditStatus, { color?: string; text: string }> = {
+      Draft: { color: 'default', text: '草稿' },
+      PendingReview: { color: 'processing', text: '待审核' },
+      Approved: { color: 'success', text: '已通过' },
+      Rejected: { color: 'error', text: '已驳回' },
+    };
+    const conf = map[auditStatus];
+    const tagNode = <Tag color={conf.color}>{conf.text}</Tag>;
+    if (auditStatus === 'Rejected' && auditReason) {
+      return <Tooltip title={`驳回原因：${auditReason}`}>{tagNode}</Tooltip>;
+    }
+    return tagNode;
+  }, [auditReason, auditStatus]);
   // 处理复制问卷的回调
   // const handleCopy = () => {
   //   message.success('复制成功');
@@ -129,7 +158,7 @@ const QuestionCard: FC<propsType> = (props: propsType) => {
             to={isPublished ? `/question/stat/${id}` : `/question/edit/${id}`}
           >
             <Space>
-              {isStar && <StarOutlined style={{ color: 'red' }} />}
+              {isStarState && <StarOutlined style={{ color: 'red' }} />}
               {title}
             </Space>
           </Link>
@@ -141,6 +170,7 @@ const QuestionCard: FC<propsType> = (props: propsType) => {
             ) : (
               <Tag>未发布</Tag>
             )}
+            {auditTag}
             <span>答卷：{answerCount}</span>
             <span>{formatDateTime(createdAt)}</span>
           </Space>

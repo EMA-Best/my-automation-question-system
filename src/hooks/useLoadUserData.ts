@@ -8,7 +8,7 @@ import { getUserInfoService } from '../services/user';
 import useGetUserInfo from './useGetUserInfo';
 import { useDispatch } from 'react-redux';
 import { loginReducer } from '../store/userReducer';
-// import { getToken } from '../utils/user-token';
+import { getToken } from '../utils/user-token';
 
 function useLoadUserData() {
   // 定义是否在等待用户数据加载完成
@@ -19,8 +19,8 @@ function useLoadUserData() {
   const { run } = useRequest(getUserInfoService, {
     manual: true,
     onSuccess(result) {
-      const { username, nickname } = result;
-      dispatch(loginReducer({ username, nickname })); // 存储用户信息到redux store
+      const { username, nickname, role } = result;
+      dispatch(loginReducer({ username, nickname, role })); // 存储用户信息到redux store
     },
     // 无论成功失败，都设置waitingUserData为false
     onFinally() {
@@ -40,18 +40,17 @@ function useLoadUserData() {
       setWaitingUserData(false);
       return;
     }
-    run();
 
-    // 检查是否有token
-    // const token = getToken();
-    // if (token) {
-    //   // 有token但没有用户名，说明刚登录成功，需要加载用户信息
-    //   run();
-    // } else {
-    //   // 没有token也没有用户名，说明未登录，不需要加载用户信息
-    //   setWaitingUserData(false);
-    // }
-  }, [username]);
+    // 仅在本地存在 token 时才拉取用户信息
+    const token = getToken();
+    if (token) {
+      run();
+      return;
+    }
+
+    // 未登录：无需请求 /api/user/info
+    setWaitingUserData(false);
+  }, [username, run]);
 
   return { waitingUserData, loadUserInfo: run };
 }

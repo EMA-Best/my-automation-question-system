@@ -12,6 +12,21 @@ export default [
   // 基础JavaScript配置
   js.configs.recommended,
 
+  // Jest 测试文件的全局变量（test/expect/describe 等）
+  {
+    files: [
+      '**/*.test.{js,jsx,ts,tsx}',
+      '**/*.spec.{js,jsx,ts,tsx}',
+      '**/setupTests.{js,jsx,ts,tsx}',
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.jest,
+      },
+    },
+  },
+
   // 主配置块
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],

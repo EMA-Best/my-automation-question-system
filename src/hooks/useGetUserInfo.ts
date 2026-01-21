@@ -11,10 +11,10 @@ import { UserStateType } from '../store/userReducer';
 function useGetUserInfo() {
   // StateType限制state类型
   // UserStateType限制该函数的返回值类型
-  const { username, nickname } = useSelector<StateType>(
+  const { username, nickname, role } = useSelector<StateType>(
     (state) => state.user
   ) as UserStateType;
-  return { username, nickname };
+  return { username, nickname, role };
 }
 
 export default useGetUserInfo;

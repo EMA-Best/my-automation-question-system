@@ -1,4 +1,4 @@
-import { FC, useEffect } from 'react';
+import { FC, useCallback, useEffect } from 'react';
 import {
   Typography,
   Space,
@@ -8,7 +8,8 @@ import {
   Checkbox,
   message,
 } from 'antd';
-import { UserAddOutlined } from '@ant-design/icons';
+import type { FormProps } from 'antd';
+import { LockOutlined, UserAddOutlined, UserOutlined } from '@ant-design/icons';
 import { useTitle, useRequest } from 'ahooks';
 import { Link } from 'react-router-dom';
 import styles from './index.module.scss';
@@ -43,12 +44,37 @@ const getUserInfoFromStorage = () => {
   return { username, password };
 };
 
+type LoginFormValues = {
+  username: string;
+  password: string;
+  remember?: boolean;
+};
+
 const Login: FC = () => {
   useTitle('小伦问卷 - 登录');
   // antd表单实例 用于设置表单默认值
-  const [form] = Form.useForm();
+  const [form] = Form.useForm<LoginFormValues>();
   // 获取loadUserInfo函数
   const { loadUserInfo } = useLoadUserData();
+
+  // 登录
+  const { run: handleLogin, loading } = useRequest(
+    async (username: string, password: string) => {
+      const result = await loginService(username, password);
+      return result;
+    },
+    {
+      manual: true,
+      onSuccess(result) {
+        const { token } = result;
+        setToken(token);
+        message.success('登录成功');
+        // 立即加载用户信息到Redux store（随后由路由守卫跳转）
+        loadUserInfo();
+      },
+    }
+  );
+
   // 组件挂载时获取用户信息
   useEffect(() => {
     // 获取用户信息
@@ -60,124 +86,115 @@ const Login: FC = () => {
         password,
       });
     }
-  }, []);
+  }, [form]);
+
   // 表单提交成功回调
-  const onFinish = (values: any) => {
-    // console.log(values);
-    const { username, password, remember } = values;
-    handleLogin(username, password); // 执行登录请求
-    // 如果勾选了记住密码，将用户信息存储在localStorage中
-    if (remember) {
-      rememberUser(username, password);
-    } else {
-      // 如果没有勾选记住密码，删除localStorage中的用户信息
-      forgetUser();
-    }
-  };
+  const onFinish = useCallback<
+    NonNullable<FormProps<LoginFormValues>['onFinish']>
+  >(
+    (values) => {
+      const { username, password, remember } = values;
+      handleLogin(username, password);
 
-  // const navigate = useNavigate();
-  // 登录
-  const { run: handleLogin } = useRequest(
-    async (username: string, password: string) => {
-      const result = await loginService(username, password);
-      return result;
+      if (remember) {
+        rememberUser(username, password);
+      } else {
+        forgetUser();
+      }
     },
-    {
-      manual: true,
-      onSuccess(result) {
-        const { token } = result;
-        // console.log('登录成功后返回的token:', token);
-
-        // 登录成功后，将token存储在localStorage中
-        setToken(token);
-        message.success('登录成功');
-        // 登录成功后，跳转到首页
-        // navigate(routePath.MANAGE_LIST);
-        // 立即加载用户信息到Redux store
-        loadUserInfo();
-      },
-    }
+    [handleLogin]
   );
 
-  // 表单提交失败回调
-  const onFinishFailed = (errorInfo: any) => {
+  const onFinishFailed = useCallback<
+    NonNullable<FormProps<LoginFormValues>['onFinishFailed']>
+  >((errorInfo) => {
     console.log(errorInfo);
-  };
+  }, []);
 
   return (
     <div className={styles.container}>
-      {/* 标题部分 */}
-      <div className={styles.title}>
-        <Space>
-          <Title level={2}>
+      <div className={styles.header}>
+        <Space size={10} align="center">
+          <span className={styles.headerIcon}>
             <UserAddOutlined />
-          </Title>
-          <Title level={2}>用户登录</Title>
+          </span>
+          <div>
+            <Title level={3} className={styles.title}>
+              欢迎回来
+            </Title>
+            <div className={styles.subTitle}>登录后进入问卷管理与编辑</div>
+          </div>
         </Space>
       </div>
-      {/* 表单部分 */}
-      <div>
-        {/* initialValues设置表单默认值 form属性可以设置表单初始值默认值*/}
-        <Form
-          labelCol={{ span: 6 }}
-          wrapperCol={{ span: 18 }}
-          onFinish={onFinish}
-          onFinishFailed={onFinishFailed}
-          initialValues={{ remember: true }}
-          form={form}
+
+      <Form
+        form={form}
+        layout="vertical"
+        size="large"
+        onFinish={onFinish}
+        onFinishFailed={onFinishFailed}
+        initialValues={{ remember: true }}
+      >
+        <Form.Item
+          label="用户名"
+          name="username"
+          rules={[
+            { required: true, message: '请输入用户名' },
+            {
+              type: 'string',
+              min: 6,
+              max: 10,
+              message: '长度必须在6到10个字符之间',
+            },
+            {
+              pattern: /^[a-zA-Z0-9_]+$/,
+              message: '只能包含字母、数字和下划线',
+            },
+          ]}
         >
-          <Form.Item
-            label="用户名"
-            name="username"
-            rules={[
-              { required: true, message: '请输入用户名' },
-              {
-                type: 'string',
-                min: 6,
-                max: 10,
-                message: '长度必须在6到10个字符之间',
-              },
-              {
-                pattern: /^[a-zA-Z0-9_]+$/,
-                message: '只能包含字母、数字和下划线',
-              },
-            ]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="密码"
-            name="password"
-            rules={[
-              { required: true, message: '请输入密码' },
-              {
-                type: 'string',
-                min: 6,
-                max: 12,
-                message: '密码长度必须在6到12个字符之间',
-              },
-            ]}
-          >
-            <Input.Password />
-          </Form.Item>
-          {/* valuePropName指定checkbox要提交的value值 */}
-          <Form.Item
-            name="remember"
-            valuePropName="checked"
-            wrapperCol={{ offset: 6, span: 18 }}
-          >
-            <Checkbox>记住密码</Checkbox>
-          </Form.Item>
-          <Form.Item wrapperCol={{ offset: 6, span: 18 }}>
-            <Space>
-              <Button type="primary" htmlType="submit">
-                登录
-              </Button>
-              <Link to={routePath.REGISTER}>注册新用户</Link>
-            </Space>
-          </Form.Item>
-        </Form>
-      </div>
+          <Input
+            prefix={<UserOutlined />}
+            placeholder="请输入用户名"
+            allowClear
+            autoComplete="username"
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="密码"
+          name="password"
+          rules={[
+            { required: true, message: '请输入密码' },
+            {
+              type: 'string',
+              min: 6,
+              max: 12,
+              message: '密码长度必须在6到12个字符之间',
+            },
+          ]}
+        >
+          <Input.Password
+            prefix={<LockOutlined />}
+            placeholder="请输入密码"
+            autoComplete="current-password"
+          />
+        </Form.Item>
+
+        <Form.Item name="remember" valuePropName="checked">
+          <Checkbox>记住密码</Checkbox>
+        </Form.Item>
+
+        <Form.Item>
+          <Button type="primary" htmlType="submit" block loading={loading}>
+            登录
+          </Button>
+        </Form.Item>
+
+        <div className={styles.footerRow}>
+          <span className={styles.footerText}>还没有账号？</span>
+          <Link to={routePath.REGISTER}>注册新用户</Link>
+        </div>
+      </Form>
     </div>
   );
 };

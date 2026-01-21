@@ -20,7 +20,15 @@ export function formatDateTime(
 
   if (input == null) return emptyFallback;
 
-  const date = input instanceof Date ? input : new Date(input as any);
+  let date: Date;
+  if (input instanceof Date) {
+    date = input;
+  } else if (typeof input === 'string' || typeof input === 'number') {
+    date = new Date(input);
+  } else {
+    return emptyFallback;
+  }
+
   const time = date.getTime();
   if (Number.isNaN(time)) return emptyFallback;
 

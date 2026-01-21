@@ -7,9 +7,14 @@ import {
   BarsOutlined,
   StarOutlined,
   DeleteOutlined,
+  AuditOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import { createQuestionService } from '../../services/question';
 import { useRequest } from 'ahooks';
+import Access from '../../components/Access';
+import { routePath } from '../../router';
+import useGetUserInfo from '../../hooks/useGetUserInfo';
 
 const ManageLayout: FC = () => {
   const navigate = useNavigate();
@@ -17,23 +22,30 @@ const ManageLayout: FC = () => {
   // 新建问卷按钮是否loading状态
   const { pathname } = location;
 
-  // 跳转到我的问卷列表页
-  const toMyQuestions = () => {
-    console.log(pathname);
+  const { role } = useGetUserInfo();
+  const isAdmin = role === 'admin';
 
-    navigate('/manage/list');
+  // 跳转到全部问卷列表页
+  const toAllQuestions = () => {
+    navigate(routePath.MANAGE_LIST);
   };
 
   // 跳转到星标问卷列表页
   const toStarQuestions = () => {
-    console.log(pathname);
-    navigate('/manage/star');
+    navigate(routePath.MANAGE_STAR);
   };
 
   // 跳转到回收站列表页
   const toTrashQuestions = () => {
-    console.log(pathname);
-    navigate('/manage/trash');
+    navigate(routePath.MANAGE_TRASH);
+  };
+
+  const toReviews = () => {
+    navigate(routePath.MANAGE_REVIEWS);
+  };
+
+  const toUsers = () => {
+    navigate(routePath.MANAGE_USERS);
   };
 
   // 新建问卷按钮的回调
@@ -75,9 +87,9 @@ const ManageLayout: FC = () => {
             type={pathname.startsWith('/manage/list') ? 'default' : 'text'}
             size="large"
             icon={<BarsOutlined />}
-            onClick={toMyQuestions}
+            onClick={toAllQuestions}
           >
-            我的问卷
+            全部问卷
           </Button>
           <Button
             type={pathname.startsWith('/manage/star') ? 'default' : 'text'}
@@ -85,7 +97,7 @@ const ManageLayout: FC = () => {
             icon={<StarOutlined />}
             onClick={toStarQuestions}
           >
-            星标问卷
+            {isAdmin ? '运营推荐' : '星标问卷'}
           </Button>
           <Button
             type={pathname.startsWith('/manage/trash') ? 'default' : 'text'}
@@ -95,6 +107,26 @@ const ManageLayout: FC = () => {
           >
             回收站
           </Button>
+
+          <Access need="manage:admin">
+            <Divider />
+            <Button
+              type={pathname.startsWith('/manage/reviews') ? 'default' : 'text'}
+              size="large"
+              icon={<AuditOutlined />}
+              onClick={toReviews}
+            >
+              审核队列
+            </Button>
+            <Button
+              type={pathname.startsWith('/manage/users') ? 'default' : 'text'}
+              size="large"
+              icon={<TeamOutlined />}
+              onClick={toUsers}
+            >
+              用户管理
+            </Button>
+          </Access>
         </Space>
       </div>
       <div className={styles.right}>

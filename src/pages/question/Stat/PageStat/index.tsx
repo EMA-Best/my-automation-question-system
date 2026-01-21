@@ -2,8 +2,10 @@ import { useRequest } from 'ahooks';
 import { FC, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getQuestionStatListService } from '../../../../services/stat';
-import { Pagination, Spin, Table, Typography } from 'antd';
+import { Empty, Pagination, Table, Typography } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import useGetComponentInfo from '../../../../hooks/useGetComponentInfo';
+import styles from './index.module.scss';
 
 type PropsType = {
   selectedComponentId: string;
@@ -13,7 +15,7 @@ type PropsType = {
   setSelectedComponentType: (type: string) => void;
 };
 
-const { Title } = Typography;
+type StatRow = Record<string, unknown> & { _id: string };
 
 const PageStat: FC<PropsType> = (props) => {
   const {
@@ -23,7 +25,7 @@ const PageStat: FC<PropsType> = (props) => {
   } = props;
   const { id = '' } = useParams();
   const [total, setTotal] = useState(0);
-  const [list, setList] = useState([]);
+  const [list, setList] = useState<StatRow[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -39,8 +41,6 @@ const PageStat: FC<PropsType> = (props) => {
     {
       refreshDeps: [id, page, pageSize], // 依赖id,page,pageSize刷新
       onSuccess(res) {
-        console.log('问卷统计信息：', res);
-
         const { total, list = [] } = res;
 
         setTotal(total);
@@ -51,86 +51,105 @@ const PageStat: FC<PropsType> = (props) => {
 
   const { componentList } = useGetComponentInfo();
 
-  console.log('componentList: ', componentList);
-
   // 表格需要的列配置
-  const columns = componentList.map((c) => {
-    const { fe_id, title, props = {}, type } = c;
-    const colTitle = props.title || title;
+  const columns: ColumnsType<Record<string, unknown>> = componentList
+    .filter((c) => !c.isHidden)
+    .map((c) => {
+      const { fe_id, title, props = {}, type } = c;
+      const colTitle = props.title || title;
 
-    // 表格title列的元素
-    const TitleElem = (
-      <div
-        style={{ cursor: 'pointer' }}
-        onClick={() => {
-          setSelectedComponentId(fe_id);
-          setSelectedComponentType(type);
-        }}
-      >
-        <span
-          style={{
-            color: fe_id === selectedComponentId ? '#1890ff' : 'inherit',
+      // 表格title列的元素
+      const TitleElem = (
+        <div
+          style={{ cursor: 'pointer' }}
+          onClick={() => {
+            setSelectedComponentId(fe_id);
+            setSelectedComponentType(type);
           }}
         >
-          {colTitle}
-        </span>
-      </div>
-    );
-    return {
-      //title: colTitle,
-      title: TitleElem,
-      dataIndex: fe_id,
-      key: fe_id,
-    };
-  });
+          <Typography.Text
+            ellipsis={{ tooltip: String(colTitle ?? '') }}
+            style={{
+              color: fe_id === selectedComponentId ? '#1677ff' : 'inherit',
+            }}
+          >
+            {String(colTitle ?? '')}
+          </Typography.Text>
+        </div>
+      );
 
-  console.log('columns: ', columns);
-
-  console.log('list: ', list);
+      return {
+        //title: colTitle,
+        title: TitleElem,
+        dataIndex: fe_id,
+        key: fe_id,
+        width: 200,
+      };
+    });
 
   // 表格需要的数据源 默认没有key 所以需要手动添加
-  const dataSource = list.map((item: any) => {
+  const dataSource = list.map((item) => {
     return {
       ...item,
       key: item._id,
     };
   });
 
-  console.log('dataSource: ', dataSource);
-
-  // 表格元素
-  const TableElem = (
-    <>
-      <Table
-        columns={columns}
-        dataSource={dataSource}
-        pagination={false}
-      ></Table>
-      <div style={{ marginTop: '18px' }}>
-        <Pagination
-          total={total}
-          align="center"
-          pageSize={pageSize}
-          current={page}
-          onChange={(page) => setPage(page)}
-          onShowSizeChange={(page, pageSize) => {
-            setPage(page);
-            setPageSize(pageSize);
-          }}
-        />
-      </div>
-    </>
-  );
+  const emptyText =
+    total === 0 ? '暂无答卷数据' : '暂无可展示数据（请检查题目配置）';
 
   return (
-    <div>
-      <Title level={3}>答卷数量：{!loading && total}</Title>
-      {loading && (
-        <div style={{ textAlign: 'center' }}>
-          <Spin />
+    <div className={styles.wrap}>
+      <div className={styles.headerRow}>
+        <div>
+          <div className={styles.title}>答卷数量：{loading ? '—' : total}</div>
+          <div className={styles.subTitle}>
+            点击表头题目可快速定位到左侧组件
+          </div>
         </div>
-      )}
-      {!loading && TableElem}
+
+        <Typography.Text type="secondary">
+          第 {page} 页 / 每页 {pageSize} 条
+        </Typography.Text>
+      </div>
+
+      <div className={styles.tableWrap}>
+        <Table
+          columns={columns}
+          dataSource={dataSource}
+          pagination={false}
+          size="middle"
+          bordered
+          sticky
+          loading={loading}
+          locale={{
+            emptyText: (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={emptyText}
+              />
+            ),
+          }}
+          rowClassName={(_, index) => (index % 2 === 1 ? styles.rowOdd : '')}
+          scroll={{ x: 'max-content' }}
+        />
+
+        <div className={styles.paginationWrap}>
+          <Pagination
+            total={total}
+            align="center"
+            pageSize={pageSize}
+            current={page}
+            showSizeChanger
+            showQuickJumper
+            onChange={(nextPage) => setPage(nextPage)}
+            onShowSizeChange={(nextPage, nextPageSize) => {
+              setPage(nextPage);
+              setPageSize(nextPageSize);
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 };

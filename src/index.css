@@ -7,7 +7,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-/* *,
+/*
+*,
 *::before,
 *::after {
   box-sizing: border-box;
@@ -15,7 +16,7 @@ body {
   padding: 0;
 }
 
-/* 2. 根元素高度/宽度配置（打通百分比高度链条） */
+2. 根元素高度/宽度配置（打通百分比高度链条）
 html,
 body,
 #root {
@@ -26,7 +27,9 @@ body,
   min-height: 100vh;
   font-family: Inter, Helvetica, Arial, sans-serif;
 }
-*/ code {
+*/
+
+code {
   font-family:
     source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }

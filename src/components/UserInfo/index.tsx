@@ -2,7 +2,7 @@ import { FC } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { routePath } from '../../router';
 import { UserOutlined } from '@ant-design/icons';
-import { Button, message } from 'antd';
+import { Button, message, Tag } from 'antd';
 import { removeToken } from '../../utils/user-token';
 import useGetUserInfo from '../../hooks/useGetUserInfo';
 import { useDispatch } from 'react-redux';
@@ -11,7 +11,7 @@ import { logoutReducer } from '../../store/userReducer';
 const UserInfo: FC = () => {
   const dispatch = useDispatch();
   // 获取用户信息
-  const { username, nickname } = useGetUserInfo();
+  const { username, nickname, role } = useGetUserInfo();
   // const { data } = useRequest(getUserInfoService);s
   // const { username, nickname } = data || {};
   // 退出登录的回调
@@ -27,6 +27,11 @@ const UserInfo: FC = () => {
       <span style={{ color: '#fff' }}>
         <UserOutlined />
         {nickname}
+        {role === 'admin' ? (
+          <Tag color="gold" style={{ marginLeft: '8px' }}>
+            管理员
+          </Tag>
+        ) : null}
       </span>
       <Button type="link" onClick={handleLogout}>
         退出

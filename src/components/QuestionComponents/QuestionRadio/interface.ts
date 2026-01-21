@@ -6,6 +6,11 @@ export type OptionType = {
 export type QuestionRadioPropsType = {
   title?: string;
   isVertical?: boolean;
+  /**
+   * 当横向排列时，如果选项内容导致换行，则自动切换为竖向排列
+   * 默认开启（true）
+   */
+  autoVertical?: boolean;
   options?: OptionType[];
   value?: string;
 
@@ -18,6 +23,7 @@ export type QuestionRadioPropsType = {
 export const QuestionRadioDefaultProps: QuestionRadioPropsType = {
   title: '单选标题',
   isVertical: false,
+  autoVertical: true,
   options: [
     { value: 'item1', text: '选项1' },
     { value: 'item2', text: '选项2' },

@@ -6,19 +6,22 @@ import { useTitle, useDebounceFn, useRequest } from 'ahooks';
 import ListSearch from '../../../components/ListSearch';
 import { useSearchParams } from 'react-router-dom';
 import { getQuestionListService } from '../../../services/question';
+import type { QuestionListItem } from '../../../services/question';
 import { LIST_SEARCH_PARAM_KEY } from '../../../constant/index';
+import useGetUserInfo from '../../../hooks/useGetUserInfo';
+import AdminQuestions from '../AdminQuestions';
 
 const { Title } = Typography;
 
-const List: FC = () => {
-  useTitle('小伦问卷 - 我的问卷');
+const ListForUser: FC = () => {
+  useTitle('小伦问卷 - 全部问卷');
   // const [questionList] = useState(rawQuestionList);
 
   // 当前不加这个状态会在一开始进入页面，出先暂无数据的bug，因为加载数据做了防抖，有延迟
   // 所以需要定义这个状态
   const [started, setStarted] = useState(false); // 是否已经开始加载数据
   const [pageNum, setPageNum] = useState(1); // 当前组件需要的pageNum参数，但不在url中
-  const [lists, setLists] = useState([]); // 累计的问卷列表数据
+  const [lists, setLists] = useState<QuestionListItem[]>([]); // 累计的问卷列表数据
   const [total, setTotal] = useState(0); // 总问卷数量
   const haveMoreData = total > lists.length; // 是否还有更多数据可以加载
   const [searchParams] = useSearchParams();
@@ -32,7 +35,6 @@ const List: FC = () => {
     setPageNum(1);
     setLists([]);
     setTotal(0);
-    console.log('lists: ', lists);
   }, [keyword]);
 
   // 真正加载
@@ -50,7 +52,7 @@ const List: FC = () => {
       onSuccess: (result) => {
         console.log('result: ', result);
         const { list = [], count = 0 } = result;
-        setLists(lists.concat(list)); // 累计
+        setLists((prev) => prev.concat(list)); // 累计
         setTotal(count);
         setPageNum(pageNum + 1);
       },
@@ -119,7 +121,7 @@ const List: FC = () => {
     <>
       <div className={styles.header}>
         <div className={styles.left}>
-          <Title level={3}>我的问卷</Title>
+          <Title level={3}>全部问卷</Title>
         </div>
         <div className={styles.right}>
           <ListSearch />
@@ -128,9 +130,7 @@ const List: FC = () => {
       <div className={styles.content}>
         {/* 问卷列表 */}
         {lists.length > 0 &&
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          lists.map((item: any) => {
-            // console.log(`item${index} `, item);
+          lists.map((item) => {
             const { _id, title, isPublished, isStar, answerCount, createdAt } =
               item;
             return (
@@ -140,6 +140,8 @@ const List: FC = () => {
                 title={title}
                 isPublished={isPublished}
                 isStar={isStar}
+                auditStatus={item.auditStatus}
+                auditReason={item.auditReason}
                 answerCount={answerCount}
                 createdAt={createdAt}
               />
@@ -151,6 +153,21 @@ const List: FC = () => {
       </div>
     </>
   );
+};
+
+const ListForAdmin: FC = () => {
+  return (
+    <AdminQuestions
+      pageTitle="小伦问卷 - 全部问卷（全量）"
+      headerTitle="全部问卷（全量）"
+    />
+  );
+};
+
+const List: FC = () => {
+  const { role } = useGetUserInfo();
+  if (role === 'admin') return <ListForAdmin />;
+  return <ListForUser />;
 };
 
 export default List;

@@ -1,7 +1,7 @@
 import { FC, useState } from 'react';
 import useLoadQuestionData from '../../../hooks/useLoadQuestionData';
 import useGetPageInfo from '../../../hooks/useGetPageInfo';
-import { Button, Result, Spin } from 'antd';
+import { Button, Result, Spin, Tabs, Typography } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useTitle } from 'ahooks';
 import styles from './index.module.scss';
@@ -9,6 +9,10 @@ import StatHeader from './StatHeader';
 import ComponentList from './ComponentList';
 import PageStat from './PageStat';
 import ChartStat from './ChartStat';
+
+type RightViewKey = 'table' | 'chart';
+
+const { Text } = Typography;
 
 const Stat: FC = () => {
   const navigate = useNavigate();
@@ -27,8 +31,9 @@ const Stat: FC = () => {
 
   // 状态提升 selectedId type 通过props传给子组件
   const [selectedComponentId, setSelectedComponentId] = useState('');
-  // eslint-disable-next-line no-unused-vars
   const [selectedComponentType, setSelectedComponentType] = useState('');
+
+  const [rightView, setRightView] = useState<RightViewKey>('table');
 
   // 内容部分
   const getContentElem = () => {
@@ -51,25 +56,48 @@ const Stat: FC = () => {
     // 如果问卷已发布
     return (
       <>
-        <div className={styles.left}>
-          <ComponentList
-            selectedComponentId={selectedComponentId}
-            setSelectedComponentId={setSelectedComponentId}
-            setSelectedComponentType={setSelectedComponentType}
-          />
+        <div className={styles.leftPanel}>
+          <div className={styles.panelHeader}>问卷结构</div>
+          <div className={styles.panelBody}>
+            <ComponentList
+              selectedComponentId={selectedComponentId}
+              setSelectedComponentId={setSelectedComponentId}
+              setSelectedComponentType={setSelectedComponentType}
+            />
+          </div>
         </div>
-        <div className={styles.main}>
-          <PageStat
-            selectedComponentId={selectedComponentId}
-            setSelectedComponentId={setSelectedComponentId}
-            setSelectedComponentType={setSelectedComponentType}
-          />
-        </div>
-        <div className={styles.right}>
-          <ChartStat
-            selectedComponentId={selectedComponentId}
-            selectedComponentType={selectedComponentType}
-          />
+
+        <div className={styles.rightPanel}>
+          <div className={styles.rightHeader}>
+            <Tabs
+              activeKey={rightView}
+              onChange={(key) => setRightView(key as RightViewKey)}
+              tabBarExtraContent={
+                <Text type="secondary" className={styles.rightHint}>
+                  点击单选/多选题可查看图表统计
+                </Text>
+              }
+              items={[
+                { key: 'table', label: '表格统计' },
+                { key: 'chart', label: '图表统计' },
+              ]}
+            />
+          </div>
+
+          <div className={styles.panelBody}>
+            {rightView === 'chart' ? (
+              <ChartStat
+                selectedComponentId={selectedComponentId}
+                selectedComponentType={selectedComponentType}
+              />
+            ) : (
+              <PageStat
+                selectedComponentId={selectedComponentId}
+                setSelectedComponentId={setSelectedComponentId}
+                setSelectedComponentType={setSelectedComponentType}
+              />
+            )}
+          </div>
         </div>
       </>
     );

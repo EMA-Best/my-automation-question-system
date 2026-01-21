@@ -1,0 +1,22 @@
+.previewCard {
+  :global {
+    /* 让预览更像“真实问卷页面”，留白更舒适 */
+    .ant-card-body {
+      padding: 24px;
+    }
+  }
+}
+
+.previewContent {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.previewBlock {
+  /* 给每个组件块一点上下呼吸空间，避免过紧 */
+  padding: 4px 0;
+}
