@@ -7,6 +7,12 @@ export type QuestionStatListRes = {
   list: StatRow[];
 };
 
+export type HomeStatRes = {
+  createdCount: number;
+  publishedCount: number;
+  answerCount: number;
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
@@ -29,6 +35,32 @@ function parseQuestionStatListRes(value: unknown): QuestionStatListRes {
   }
 
   return { total, list };
+}
+
+function parseHomeStatRes(value: unknown): HomeStatRes {
+  if (!isRecord(value)) {
+    return { createdCount: 0, publishedCount: 0, answerCount: 0 };
+  }
+
+  const createdRaw = value.createdCount;
+  const publishedRaw = value.publishedCount;
+  const answerRaw = value.answerCount;
+
+  const createdCount =
+    typeof createdRaw === 'number' ? createdRaw : Number(createdRaw) || 0;
+  const publishedCount =
+    typeof publishedRaw === 'number' ? publishedRaw : Number(publishedRaw) || 0;
+  const answerCount =
+    typeof answerRaw === 'number' ? answerRaw : Number(answerRaw) || 0;
+
+  return { createdCount, publishedCount, answerCount };
+}
+
+// 首页统计：创建问卷数、发布问卷数、答卷总数
+export async function getHomeStatService(): Promise<HomeStatRes> {
+  const url = '/api/stat/overview';
+  const data = (await axios.get(url)) as unknown;
+  return parseHomeStatRes(data);
 }
 
 // 获取问卷的统计列表

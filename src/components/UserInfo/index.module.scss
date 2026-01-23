@@ -1,0 +1,85 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 120px;
+}
+
+.loginLink {
+  display: inline-flex;
+}
+
+.trigger {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1;
+  transition: background-color 0.2s ease;
+}
+
+.trigger:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.trigger:active {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.avatar {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.roleTagInline {
+  margin-inline: 0;
+  border: none;
+}
+
+.roleTag {
+  margin-inline: 0;
+  border: none;
+}
+
+.downIcon {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.menuProfile {
+  padding: 4px 4px;
+}
+
+.menuNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menuName {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+.menuMeta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.menuDanger {
+  color: #ff4d4f;
+  font-weight: 500;
+}
