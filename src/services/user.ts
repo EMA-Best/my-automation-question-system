@@ -5,6 +5,15 @@ export type LoginRes = {
   token: string;
 };
 
+export type UpdateUserInfoBody = {
+  nickname: string;
+};
+
+export type UpdatePasswordBody = {
+  oldPassword: string;
+  newPassword: string;
+};
+
 function isUserRole(value: unknown): value is UserRole {
   return value === 'user' || value === 'admin';
 }
@@ -40,6 +49,26 @@ export async function getUserInfoService(): Promise<UserInfo> {
   const url = `/api/user/info`;
   const data = (await axios.get(url)) as unknown;
   return normalizeUserInfo(data);
+}
+
+// 更新用户资料（目前仅支持昵称）
+export async function updateUserInfoService(
+  nickname: string
+): Promise<UserInfo> {
+  const url = '/api/user/profile';
+  const body: UpdateUserInfoBody = { nickname };
+  const data = (await axios.patch(url, body)) as unknown;
+  return normalizeUserInfo(data);
+}
+
+// 修改密码
+export async function updatePasswordService(
+  oldPassword: string,
+  newPassword: string
+): Promise<void> {
+  const url = '/api/user/password';
+  const body: UpdatePasswordBody = { oldPassword, newPassword };
+  await axios.patch(url, body);
 }
 
 // 注册用户

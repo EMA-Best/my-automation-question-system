@@ -222,6 +222,15 @@ const AdminReviews: FC = () => {
   const columns = useMemo<ColumnsType<AdminReviewListItem>>(() => {
     return [
       {
+        title: '序号',
+        key: 'index',
+        width: 80,
+        align: 'center',
+        render: (_value, _row, index) => {
+          return <span>{(page - 1) * pageSize + index + 1}</span>;
+        },
+      },
+      {
         title: '问卷标题',
         dataIndex: 'title',
         key: 'title',
@@ -283,7 +292,7 @@ const AdminReviews: FC = () => {
         },
       },
     ];
-  }, [openApprove, openPreview, openReject]);
+  }, [openApprove, openPreview, openReject, page, pageSize]);
 
   const listData: AdminReviewListRes | undefined = data;
 

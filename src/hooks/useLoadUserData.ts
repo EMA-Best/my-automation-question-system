@@ -9,10 +9,14 @@ import useGetUserInfo from './useGetUserInfo';
 import { useDispatch } from 'react-redux';
 import { loginReducer } from '../store/userReducer';
 import { getToken } from '../utils/user-token';
+import { useLocation } from 'react-router-dom';
+import { isNoNeedUserInfo } from '../router';
 
 function useLoadUserData() {
   // 定义是否在等待用户数据加载完成
   const [waitingUserData, setWaitingUserData] = useState(true);
+
+  const { pathname } = useLocation();
 
   const dispatch = useDispatch();
   // ajax获取用户信息
@@ -33,9 +37,13 @@ function useLoadUserData() {
 
   // 组件挂载时或username变化时，检查并加载用户信息
   useEffect(() => {
-    // 如果已经有用户名，说明用户信息已经加载完成
-    console.log('username：', username);
+    // 首页/登录/注册页：不需要用户信息，直接放行（避免残留 token 过期导致首页弹错）
+    if (isNoNeedUserInfo(pathname)) {
+      setWaitingUserData(false);
+      return;
+    }
 
+    // 如果已经有用户名，说明用户信息已经加载完成
     if (username) {
       setWaitingUserData(false);
       return;
@@ -50,7 +58,7 @@ function useLoadUserData() {
 
     // 未登录：无需请求 /api/user/info
     setWaitingUserData(false);
-  }, [username, run]);
+  }, [pathname, username, run]);
 
   return { waitingUserData, loadUserInfo: run };
 }

@@ -22,6 +22,7 @@ const PropComponent: FC<QuestionRadioPropsType> = (props) => {
   function handleValuesChange() {
     if (onChange == null) return;
     const newValues = form.getFieldsValue();
+    console.log('newValues: ', newValues);
     const { options = [] } = newValues;
     // 遍历添加value值 因为是空的 所以需要添加
     options.forEach((opt: OptionType) => {
@@ -54,6 +55,8 @@ const PropComponent: FC<QuestionRadioPropsType> = (props) => {
               <>
                 {/**遍历所有的选项(可删除) */}
                 {fields.map((field, index) => {
+                  // console.log('cur field: ', field);
+
                   const { key, name } = field;
                   return (
                     <Space key={key} align="baseline">
@@ -65,6 +68,7 @@ const PropComponent: FC<QuestionRadioPropsType> = (props) => {
                           {
                             validator: (_, text) => {
                               const { options = [] } = form.getFieldsValue();
+                              console.log('cur options: ', options);
                               // 计数
                               let num = 0;
                               // 遍历判断text是否有重复

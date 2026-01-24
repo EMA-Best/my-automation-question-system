@@ -26,17 +26,17 @@ export const QuestionCheckboxDefaultProps: QuestionCheckboxPropsType = {
   autoVertical: true,
   options: [
     {
-      value: 'item1',
+      value: '',
       text: '选项1',
       checked: false,
     },
     {
-      value: 'item2',
+      value: '',
       text: '选项2',
       checked: false,
     },
     {
-      value: 'item3',
+      value: '',
       text: '选项3',
       checked: false,
     },

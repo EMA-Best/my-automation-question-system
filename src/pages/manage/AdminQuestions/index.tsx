@@ -69,8 +69,8 @@ export type AdminQuestionsProps = {
 };
 
 const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
-  const pageTitle = props.pageTitle ?? '小伦问卷 - 问卷管理（全量）';
-  const headerTitle = props.headerTitle ?? '问卷管理（全量）';
+  const pageTitle = props.pageTitle ?? '小伦问卷 - 问卷管理';
+  const headerTitle = props.headerTitle ?? '问卷管理';
   const defaultQuery = props.defaultQuery;
 
   useTitle(pageTitle);
@@ -316,6 +316,15 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
   const columns = useMemo<ColumnsType<AdminQuestionListItem>>(() => {
     return [
       {
+        title: '序号',
+        key: 'index',
+        width: 80,
+        align: 'center',
+        render: (_value, _row, index) => {
+          return <span>{(page - 1) * pageSize + index + 1}</span>;
+        },
+      },
+      {
         title: '标题',
         dataIndex: 'title',
         key: 'title',
@@ -440,7 +449,7 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
         },
       },
     ];
-  }, [handleActionClick]);
+  }, [handleActionClick, page, pageSize]);
 
   return (
     <Space direction="vertical" size={16} className={styles.page}>

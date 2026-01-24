@@ -5,10 +5,13 @@ import { Typography, Button, Skeleton } from 'antd';
 import { useRequest } from 'ahooks';
 import { routePath } from '../../router/index';
 import { getHomeStatService } from '../../services/stat';
+import { useTitle } from 'ahooks';
 
 const { Title, Paragraph } = Typography;
 
 const Home: FC = () => {
+  // 设置页面标题
+  useTitle('小伦问卷 - 首页');
   const navigate = useNavigate();
 
   const { data, loading } = useRequest(getHomeStatService);

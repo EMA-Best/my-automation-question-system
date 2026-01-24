@@ -72,6 +72,13 @@ const Login: FC = () => {
         // 立即加载用户信息到Redux store（随后由路由守卫跳转）
         loadUserInfo();
       },
+      onError(error) {
+        const errMsg =
+          error instanceof Error && error.message
+            ? error.message
+            : '用户名或密码错误';
+        message.error(errMsg);
+      },
     }
   );
 

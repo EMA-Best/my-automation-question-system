@@ -263,6 +263,15 @@ const AdminUsers: FC = () => {
   const columns = useMemo<ColumnsType<AdminUserListItem>>(() => {
     return [
       {
+        title: '序号',
+        key: 'index',
+        width: 80,
+        align: 'center',
+        render: (_value, _row, index) => {
+          return <span>{(page - 1) * pageSize + index + 1}</span>;
+        },
+      },
+      {
         title: '用户名',
         dataIndex: 'username',
         key: 'username',
@@ -355,7 +364,7 @@ const AdminUsers: FC = () => {
         },
       },
     ];
-  }, [handleActionClick]);
+  }, [handleActionClick, page, pageSize]);
 
   return (
     <Space direction="vertical" size={16} className={styles.page}>

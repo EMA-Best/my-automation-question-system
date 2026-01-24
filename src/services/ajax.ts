@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { message } from 'antd';
-import { getToken } from '../utils/user-token';
+import { getToken, removeToken } from '../utils/user-token';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -14,6 +14,24 @@ function shouldSkipAuthHeader(url: string): boolean {
     url.includes('/api/auth/login') ||
     url.includes('/api/auth/register')
   );
+}
+
+function getCurrentPathname(): string {
+  if (typeof window === 'undefined') return '';
+  return window.location?.pathname || '';
+}
+
+function isPublicPath(pathname: string): boolean {
+  // 这些页面不需要用户信息，也不应因为残留过期 token 而弹错
+  return pathname === '/' || pathname === '/login' || pathname === '/register';
+}
+
+function isUserInfoApi(url: string): boolean {
+  return url.includes('/api/user/info');
+}
+
+function isLoginApi(url: string): boolean {
+  return url.includes('/api/user/login') || url.includes('/api/auth/login');
 }
 
 const instance = axios.create({
@@ -65,8 +83,12 @@ instance.interceptors.response.use(
   },
   (error: unknown) => {
     let errMsg = '请求失败';
+    let statusCode: number | undefined;
+    let requestUrl = '';
 
     if (axios.isAxiosError(error)) {
+      statusCode = error.response?.status;
+      requestUrl = error.config?.url || '';
       const responseData = error.response?.data;
       if (isRecord(responseData)) {
         const msg = responseData.msg;
@@ -90,6 +112,21 @@ instance.interceptors.response.use(
       }
     } else if (error instanceof Error && error.message) {
       errMsg = error.message;
+    }
+
+    // token 过期/无效：清理本地 token，避免后续一直 401
+    if (statusCode === 401) {
+      removeToken();
+      const pathname = getCurrentPathname();
+      // 公开页面：仅对“自动拉取用户信息”的 401 做静默处理
+      if (isPublicPath(pathname) && isUserInfoApi(requestUrl)) {
+        return Promise.reject(new Error(errMsg));
+      }
+    }
+
+    // 登录接口的错误提示由登录页自行展示，避免全局 toast 与页面 toast 重复
+    if (isLoginApi(requestUrl)) {
+      return Promise.reject(new Error(errMsg));
     }
 
     message.error(errMsg);

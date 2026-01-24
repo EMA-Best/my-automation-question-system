@@ -47,7 +47,7 @@ const defaultQueryState: QueryState = {
 type ActionType = 'detail' | 'restore' | 'hardDelete';
 
 const AdminTrash: FC = () => {
-  useTitle('小伦问卷 - 回收站（管理员）');
+  useTitle('小伦问卷 - 回收站');
 
   const [form] = Form.useForm<QueryState>();
 
@@ -353,7 +353,7 @@ const AdminTrash: FC = () => {
     <Space direction="vertical" size={16} className={styles.page}>
       <Card>
         <Title level={3} className={styles.headerTitle}>
-          回收站（管理员）
+          回收站
         </Title>
       </Card>
 

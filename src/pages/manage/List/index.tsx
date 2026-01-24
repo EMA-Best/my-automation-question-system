@@ -157,10 +157,7 @@ const ListForUser: FC = () => {
 
 const ListForAdmin: FC = () => {
   return (
-    <AdminQuestions
-      pageTitle="小伦问卷 - 全部问卷（全量）"
-      headerTitle="全部问卷（全量）"
-    />
+    <AdminQuestions pageTitle="小伦问卷 - 全部问卷" headerTitle="全部问卷" />
   );
 };
 

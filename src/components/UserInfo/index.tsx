@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo } from 'react';
+import { FC, useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { routePath } from '../../router';
 import { DownOutlined, UserOutlined } from '@ant-design/icons';
@@ -7,14 +7,24 @@ import { Avatar, Button, Dropdown, Modal, Space, Tag, message } from 'antd';
 import { removeToken } from '../../utils/user-token';
 import useGetUserInfo from '../../hooks/useGetUserInfo';
 import { useDispatch } from 'react-redux';
-import { logoutReducer } from '../../store/userReducer';
+import { loginReducer, logoutReducer } from '../../store/userReducer';
 import styles from './index.module.scss';
+import EditProfileModal from './EditProfileModal';
+import ChangePasswordModal from './ChangePasswordModal';
+import {
+  updatePasswordService,
+  updateUserInfoService,
+} from '../../services/user';
+import { useRequest } from 'ahooks';
 
 const UserInfo: FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   // 获取用户信息
   const { username, nickname, role } = useGetUserInfo();
+
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const displayName = useMemo(() => {
     return nickname || username;
@@ -43,6 +53,61 @@ const UserInfo: FC = () => {
     navigate(routePath.LOGIN);
   }, [dispatch, navigate]);
 
+  const forceRelogin = useCallback(() => {
+    dispatch(logoutReducer());
+    removeToken();
+    navigate(routePath.LOGIN);
+  }, [dispatch, navigate]);
+
+  const openEditProfile = useCallback(() => {
+    setIsEditProfileOpen(true);
+  }, []);
+
+  const closeEditProfile = useCallback(() => {
+    setIsEditProfileOpen(false);
+  }, []);
+
+  const openChangePassword = useCallback(() => {
+    setIsChangePasswordOpen(true);
+  }, []);
+
+  const closeChangePassword = useCallback(() => {
+    setIsChangePasswordOpen(false);
+  }, []);
+
+  const { run: submitProfile, loading: profileLoading } = useRequest(
+    async (newNickname: string) => {
+      const result = await updateUserInfoService(newNickname);
+      return result;
+    },
+    {
+      manual: true,
+      onSuccess(result) {
+        dispatch(loginReducer(result));
+        message.success('资料已更新');
+        closeEditProfile();
+      },
+    }
+  );
+
+  const { run: submitPassword, loading: passwordLoading } = useRequest(
+    async (oldPassword: string, newPassword: string) => {
+      await updatePasswordService(oldPassword, newPassword);
+    },
+    {
+      manual: true,
+      onSuccess() {
+        closeChangePassword();
+        Modal.info({
+          title: '请重新登录',
+          content: '你已经修改密码，请重新登录',
+          okText: '去登录',
+          onOk: forceRelogin,
+        });
+      },
+    }
+  );
+
   const confirmLogout = useCallback(() => {
     Modal.confirm({
       title: '确认退出登录？',
@@ -55,11 +120,21 @@ const UserInfo: FC = () => {
 
   const onMenuClick = useCallback<NonNullable<MenuProps['onClick']>>(
     (info) => {
+      if (info.key === 'editProfile') {
+        openEditProfile();
+        return;
+      }
+
+      if (info.key === 'changePassword') {
+        openChangePassword();
+        return;
+      }
+
       if (info.key === 'logout') {
         confirmLogout();
       }
     },
-    [confirmLogout]
+    [confirmLogout, openChangePassword, openEditProfile]
   );
 
   const menuItems = useMemo<NonNullable<MenuProps['items']>>(() => {
@@ -78,6 +153,15 @@ const UserInfo: FC = () => {
             <div className={styles.menuMeta}>@{username}</div>
           </div>
         ),
+      },
+      { type: 'divider' },
+      {
+        key: 'editProfile',
+        label: '修改资料',
+      },
+      {
+        key: 'changePassword',
+        label: '修改密码',
       },
       { type: 'divider' },
       {
@@ -125,7 +209,22 @@ const UserInfo: FC = () => {
   }, [displayName, menuItems, onMenuClick, role]);
 
   return (
-    <div className={styles.container}>{username ? userElem : loginElem}</div>
+    <div className={styles.container}>
+      {username ? userElem : loginElem}
+      <EditProfileModal
+        open={isEditProfileOpen}
+        nickname={nickname}
+        loading={profileLoading}
+        onCancel={closeEditProfile}
+        onSubmit={submitProfile}
+      />
+      <ChangePasswordModal
+        open={isChangePasswordOpen}
+        loading={passwordLoading}
+        onCancel={closeChangePassword}
+        onSubmit={submitPassword}
+      />
+    </div>
   );
 };
 

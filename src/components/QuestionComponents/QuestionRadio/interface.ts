@@ -25,9 +25,9 @@ export const QuestionRadioDefaultProps: QuestionRadioPropsType = {
   isVertical: false,
   autoVertical: true,
   options: [
-    { value: 'item1', text: '选项1' },
-    { value: 'item2', text: '选项2' },
-    { value: 'item3', text: '选项3' },
+    { value: '', text: '选项1' },
+    { value: '', text: '选项2' },
+    { value: '', text: '选项3' },
   ],
 };
 
