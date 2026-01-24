@@ -1,12 +1,22 @@
 ﻿/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call */
 import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 import { AnswerService } from 'src/answer/answer.service';
 import { QuestionService } from 'src/question/question.service';
+import type { Model } from 'mongoose';
+import { Answer } from '../answer/schemas/answer.schema';
+import { Question } from '../question/schemas/question.schema';
 
 type answerComListType = {
   name: string;
   count: number;
 }[];
+
+export type HomeOverviewStat = {
+  createdCount: number;
+  publishedCount: number;
+  answerCount: number;
+};
 
 @Injectable()
 export class StatService {
@@ -14,10 +24,14 @@ export class StatService {
   constructor(
     private readonly answerService: AnswerService,
     private readonly questionService: QuestionService,
+    @InjectModel(Answer.name) private readonly answerModel: Model<Answer>,
+    @InjectModel(Question.name) private readonly questionModel: Model<Question>,
   ) {}
 
   // 获取单选按钮的选项文本
   private _getRadioOptText(value: any, props: any = {}) {
+    console.log('cur value: ', value);
+    console.log('cur props: ', props);
     const { options = [] } = props;
     for (const item of options) {
       if (item.value === value) {
@@ -40,6 +54,9 @@ export class StatService {
 
   // 生成答卷信息
   private _genAnswersInfo(question: any, answerList: any[] = []) {
+    console.log('current question: ', question);
+    console.log('answerList: ', answerList);
+
     const res: Record<string, any> = {};
     const componentList: any[] = question?.componentList || [];
 
@@ -100,7 +117,7 @@ export class StatService {
     if (total === 0) return noData;
     const answerList = await this.answerService.findAll(questionId, opt);
 
-    console.log('getQuestionStatListAndCount answerList: ', answerList);
+    // console.log('getQuestionStatListAndCount answerList: ', answerList);
 
     const list = answerList.map((answer: any) => {
       // {_id:'',componentId: '', value: ''}
@@ -110,7 +127,7 @@ export class StatService {
       };
     });
 
-    console.log('getQuestionStatListAndCount list: ', list);
+    // console.log('getQuestionStatListAndCount list: ', list);
 
     return {
       list,
@@ -159,6 +176,8 @@ export class StatService {
     // 整理数据
     const list: answerComListType = [];
 
+    console.log('countInfo: ', countInfo);
+
     for (const val in countInfo) {
       // 根据val计算text
       let text = '';
@@ -174,5 +193,38 @@ export class StatService {
       });
     }
     return list;
+  }
+
+  // 获取首页统计数据
+  async getOverview(): Promise<HomeOverviewStat> {
+    const baseQuestionFilter = { isDeleted: false };
+
+    const [createdCount, publishedCount] = await Promise.all([
+      this.questionModel.countDocuments(baseQuestionFilter),
+      this.questionModel.countDocuments({
+        ...baseQuestionFilter,
+        isPublished: true,
+      }),
+    ]);
+
+    const agg = await this.answerModel.aggregate<{ count: number }>([
+      {
+        $lookup: {
+          from: 'questions',
+          let: { qid: '$questionId' },
+          pipeline: [
+            { $match: { $expr: { $eq: [{ $toString: '$_id' }, '$$qid'] } } },
+            { $match: { isDeleted: false } },
+            { $project: { _id: 1 } },
+          ],
+          as: 'q',
+        },
+      },
+      { $match: { 'q.0': { $exists: true } } },
+      { $count: 'count' },
+    ]);
+    const answerCount = agg[0]?.count ?? 0;
+
+    return { createdCount, publishedCount, answerCount };
   }
 }

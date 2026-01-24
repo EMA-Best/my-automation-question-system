@@ -10,7 +10,7 @@ export class AnswerController {
   @Public()
   @Post()
   async create(@Body() body) {
-    console.log('body: ', body);
+    console.log('C端提交的答卷数据： ', body);
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return await this.answerService.create(body);

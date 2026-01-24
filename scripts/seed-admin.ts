@@ -1,5 +1,16 @@
 import 'reflect-metadata';
 import mongoose from 'mongoose';
+import * as bcrypt from 'bcryptjs';
+
+function isBcryptHash(stored: string): boolean {
+  return /^\$2[aby]\$\d{2}\$/.test(stored);
+}
+
+async function hashPassword(plainPassword: string): Promise<string> {
+  const saltRounds = 10;
+  const salt = await bcrypt.genSalt(saltRounds);
+  return await bcrypt.hash(plainPassword, salt);
+}
 
 async function main() {
   const host = process.env.MONGO_HOST ?? 'localhost';
@@ -27,9 +38,10 @@ async function main() {
   const existing = await users.findOne({ username });
 
   if (!existing) {
+    const hashedPassword = await hashPassword(password);
     await users.insertOne({
       username,
-      password,
+      password: hashedPassword,
       nickname,
       role: 'admin',
       status: 'active',
@@ -41,15 +53,35 @@ async function main() {
 
     console.log(`已创建默认管理员账号：${username}`);
   } else {
+    const existingPwd =
+      typeof existing.password === 'string' ? existing.password : '';
+    const passwordIsHashed = existingPwd ? isBcryptHash(existingPwd) : false;
+
+    // 默认不强制重置密码：
+    // - 若 ADMIN_PASSWORD 显式提供，则以它为准更新
+    // - 否则仅在数据库仍是明文时做“迁移哈希”，并尽量保持原密码不变
+    let nextPassword: string | undefined;
+    if (process.env.ADMIN_PASSWORD) {
+      nextPassword = await hashPassword(password);
+    } else if (existingPwd && !passwordIsHashed) {
+      nextPassword = await hashPassword(existingPwd);
+    }
+
+    const $set: Record<string, unknown> = {
+      role: 'admin',
+      status: existing.status ?? 'active',
+      nickname: existing.nickname ?? nickname,
+      updatedAt: new Date(),
+    };
+
+    if (nextPassword) {
+      $set.password = nextPassword;
+    }
+
     await users.updateOne(
       { _id: existing._id },
       {
-        $set: {
-          role: 'admin',
-          status: existing.status ?? 'active',
-          nickname: existing.nickname ?? nickname,
-          updatedAt: new Date(),
-        },
+        $set,
       },
     );
 
