@@ -6,6 +6,7 @@ export type UserStateType = {
   username: string;
   nickname: string;
   role: UserRole;
+  mustChangePassword: boolean;
 };
 
 // 初始用户状态
@@ -13,6 +14,7 @@ const INIT_STATE: UserStateType = {
   username: '',
   nickname: '',
   role: 'user',
+  mustChangePassword: false,
 };
 
 export const userSlice = createSlice({

@@ -301,7 +301,7 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
         });
       }
     },
-    [questionById, refresh]
+    [openDeleteModal, questionById, refresh]
   );
 
   const handleCloseDetail = useCallback(() => {

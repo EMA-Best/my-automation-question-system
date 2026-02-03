@@ -1,9 +1,9 @@
-import { FC, useCallback, useMemo, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { routePath } from '../../router';
-import { DownOutlined, UserOutlined } from '@ant-design/icons';
+import { DownOutlined, LoginOutlined, UserOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
-import { Avatar, Button, Dropdown, Modal, Space, Tag, message } from 'antd';
+import { Avatar, Dropdown, Modal, Space, Tag, message } from 'antd';
 import { removeToken } from '../../utils/user-token';
 import useGetUserInfo from '../../hooks/useGetUserInfo';
 import { useDispatch } from 'react-redux';
@@ -21,7 +21,7 @@ const UserInfo: FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   // 获取用户信息
-  const { username, nickname, role } = useGetUserInfo();
+  const { username, nickname, role, mustChangePassword } = useGetUserInfo();
 
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -75,6 +75,13 @@ const UserInfo: FC = () => {
     setIsChangePasswordOpen(false);
   }, []);
 
+  // 管理员重置密码后：强制弹出改密弹窗，禁止取消
+  useEffect(() => {
+    if (!username) return;
+    if (!mustChangePassword) return;
+    setIsChangePasswordOpen(true);
+  }, [mustChangePassword, username]);
+
   const { run: submitProfile, loading: profileLoading } = useRequest(
     async (newNickname: string) => {
       const result = await updateUserInfoService(newNickname);
@@ -83,7 +90,15 @@ const UserInfo: FC = () => {
     {
       manual: true,
       onSuccess(result) {
-        dispatch(loginReducer(result));
+        // 资料更新接口可能不返回 mustChangePassword，避免误清空
+        dispatch(
+          loginReducer({
+            username: result.username,
+            nickname: result.nickname,
+            role: result.role,
+            mustChangePassword,
+          })
+        );
         message.success('资料已更新');
         closeEditProfile();
       },
@@ -173,10 +188,9 @@ const UserInfo: FC = () => {
 
   const loginElem = useMemo(() => {
     return (
-      <Link to={routePath.LOGIN} className={styles.loginLink}>
-        <Button type="primary" size="small" ghost>
-          登录
-        </Button>
+      <Link to={routePath.LOGIN} className={styles.loginButton}>
+        <LoginOutlined className={styles.loginIcon} />
+        <span>登录</span>
       </Link>
     );
   }, []);
@@ -221,6 +235,7 @@ const UserInfo: FC = () => {
       <ChangePasswordModal
         open={isChangePasswordOpen}
         loading={passwordLoading}
+        force={Boolean(username) && mustChangePassword}
         onCancel={closeChangePassword}
         onSubmit={submitPassword}
       />

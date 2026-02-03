@@ -23,8 +23,15 @@ function useLoadUserData() {
   const { run } = useRequest(getUserInfoService, {
     manual: true,
     onSuccess(result) {
-      const { username, nickname, role } = result;
-      dispatch(loginReducer({ username, nickname, role })); // 存储用户信息到redux store
+      const { username, nickname, role, mustChangePassword } = result;
+      dispatch(
+        loginReducer({
+          username,
+          nickname,
+          role,
+          mustChangePassword: Boolean(mustChangePassword),
+        })
+      ); // 存储用户信息到redux store
     },
     // 无论成功失败，都设置waitingUserData为false
     onFinally() {

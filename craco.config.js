@@ -14,6 +14,7 @@ module.exports = {
         new BundleAnalyzerPlugin({
           analyzerMode: 'static', // 生成 HTML 文件
           openAnalyzer: false, // 关闭构建完成后自动打开浏览器
+          defaultSizes: 'stat', // 使用 stats 中的大小，避免读取 build 目录下不存在的旧文件名（如 bundle.js）
         })
       );
       if (webpackConfig.mode === 'production') {

@@ -673,13 +673,17 @@ export type ResetPasswordStrategy = 'random' | 'default';
 
 export type ResetPasswordRes = {
   newPassword?: string;
+  mustChangePassword?: boolean;
 };
 
 function parseResetPasswordRes(value: unknown): ResetPasswordRes {
   if (!isRecord(value)) return {};
   const newPassword = value.newPassword;
+  const mustChangePassword = value.mustChangePassword;
   return {
     newPassword: typeof newPassword === 'string' ? newPassword : undefined,
+    mustChangePassword:
+      typeof mustChangePassword === 'boolean' ? mustChangePassword : undefined,
   };
 }
 

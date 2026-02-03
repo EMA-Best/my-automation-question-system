@@ -28,7 +28,11 @@ function normalizeUserInfo(data: unknown): UserInfo {
   const nickname = typeof record.nickname === 'string' ? record.nickname : '';
   const role = isUserRole(record.role) ? record.role : 'user';
 
-  return { username, nickname, role };
+  const mustChangePasswordRaw = record.mustChangePassword;
+  const mustChangePassword =
+    typeof mustChangePasswordRaw === 'boolean' ? mustChangePasswordRaw : false;
+
+  return { username, nickname, role, mustChangePassword };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -253,11 +253,31 @@ const AdminUsers: FC = () => {
     if (res.newPassword) {
       Modal.info({
         title: '密码已重置',
-        content: `新密码：${res.newPassword}`,
+        content: (
+          <Space direction="vertical" size={8}>
+            <div>
+              新密码：
+              <Typography.Text
+                strong
+                copyable={{ text: res.newPassword }}
+                style={{ marginLeft: 8 }}
+              >
+                {res.newPassword}
+              </Typography.Text>
+            </div>
+            <Typography.Text type="secondary">
+              该密码仅在本弹窗显示一次，请及时交付给用户。用户下次登录将被强制要求修改密码。
+            </Typography.Text>
+          </Space>
+        ),
       });
       return;
     }
-    message.success('密码已重置');
+    message.success(
+      resetStrategy === 'default'
+        ? '已重置为默认初始密码（123456），用户下次登录需修改'
+        : '密码已重置'
+    );
   }, [resetModalUserId, resetStrategy]);
 
   const columns = useMemo<ColumnsType<AdminUserListItem>>(() => {
@@ -498,7 +518,7 @@ const AdminUsers: FC = () => {
         >
           <Space direction="vertical">
             <Radio value="random">随机密码</Radio>
-            <Radio value="default">默认初始密码</Radio>
+            <Radio value="default">默认初始密码(123456)</Radio>
           </Space>
         </Radio.Group>
       </Modal>
