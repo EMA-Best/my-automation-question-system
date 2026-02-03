@@ -1,16 +1,6 @@
 import 'reflect-metadata';
 import mongoose from 'mongoose';
-import * as bcrypt from 'bcryptjs';
-
-function isBcryptHash(stored: string): boolean {
-  return /^\$2[aby]\$\d{2}\$/.test(stored);
-}
-
-async function hashPassword(plainPassword: string): Promise<string> {
-  const saltRounds = 10;
-  const salt = await bcrypt.genSalt(saltRounds);
-  return await bcrypt.hash(plainPassword, salt);
-}
+import { hashPassword, isBcryptHash } from '../src/user/password.util';
 
 async function main() {
   const host = process.env.MONGO_HOST ?? 'localhost';

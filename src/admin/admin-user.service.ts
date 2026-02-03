@@ -7,6 +7,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
 import { User, type UserDocument } from '../user/schemas/user.schema';
+import { hashPassword } from '../user/password.util';
 
 export type AdminUserListItem = {
   _id: unknown;
@@ -95,19 +96,26 @@ export class AdminUserService {
 
     return { ok: true };
   }
-
   async resetPassword(params: {
     targetUserId: string;
     strategy?: 'random' | 'default';
     newPassword?: string;
+    actorUsername?: string;
+    ip?: string;
   }) {
     const user = await this.userModel.findById(params.targetUserId);
     if (!user) throw new NotFoundException('用户不存在');
 
     if (params.newPassword && params.newPassword.trim()) {
-      user.password = params.newPassword;
+      user.password = await hashPassword(params.newPassword);
+      user.mustChangePassword = true;
+      user.passwordUpdatedAt = new Date();
+      user.passwordUpdatedByRole = 'admin';
+      user.passwordUpdatedBy = params.actorUsername ?? null;
+      user.passwordUpdatedIp = params.ip ?? null;
+      user.passwordResetStrategy = 'manual';
       await user.save();
-      return { ok: true };
+      return { mustChangePassword: true };
     }
 
     const strategy = params.strategy ?? 'default';
@@ -119,18 +127,34 @@ export class AdminUserService {
           'DEFAULT_RESET_PASSWORD 长度必须在6到12个字符之间',
         );
       }
-      user.password = defaultPassword;
+      user.password = await hashPassword(defaultPassword);
+      user.mustChangePassword = true;
+      user.passwordUpdatedAt = new Date();
+      user.passwordUpdatedByRole = 'admin';
+      user.passwordUpdatedBy = params.actorUsername ?? null;
+      user.passwordUpdatedIp = params.ip ?? null;
+      user.passwordResetStrategy = 'default';
       await user.save();
-      return { ok: true, strategy: 'default' };
+      return { strategy: 'default', mustChangePassword: true };
     }
 
     // random
     const randomPassword = this.generateTempPassword(10);
-    user.password = randomPassword;
+    user.password = await hashPassword(randomPassword);
+    user.mustChangePassword = true;
+    user.passwordUpdatedAt = new Date();
+    user.passwordUpdatedByRole = 'admin';
+    user.passwordUpdatedBy = params.actorUsername ?? null;
+    user.passwordUpdatedIp = params.ip ?? null;
+    user.passwordResetStrategy = 'random';
     await user.save();
 
     // 注意：这里会把临时密码回传给管理员前端（仅用于一次性展示）
-    return { ok: true, strategy: 'random', tempPassword: randomPassword };
+    return {
+      strategy: 'random',
+      mustChangePassword: true,
+      newPassword: randomPassword,
+    };
   }
 
   async deleteUser(targetUserId: string, actorUsername: string) {

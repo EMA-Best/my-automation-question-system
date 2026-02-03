@@ -4,6 +4,20 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import { nanoid } from 'nanoid';
 import type { Readable } from 'node:stream';
 
+type ReadableStreamLike = {
+  on: (event: string, listener: (...args: any[]) => void) => unknown;
+};
+
+function isReadableStreamLike(value: unknown): value is ReadableStreamLike {
+  if (typeof value !== 'object' || value == null) return false;
+  return typeof (value as Record<string, unknown>).on === 'function';
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== 'object' || value == null) return null;
+  return value as Record<string, unknown>;
+}
+
 /**
  * AI生成问卷请求接口
  * @interface AIGenerateQuestionRequest
@@ -299,8 +313,8 @@ export class AIService {
         },
       );
 
-      const stream = response.data;
-      if (!stream || typeof (stream as any).on !== 'function') {
+      const stream: unknown = response.data;
+      if (!isReadableStreamLike(stream)) {
         throw new BadRequestException('AI 流式响应不可用');
       }
 
@@ -373,9 +387,10 @@ export class AIService {
           if (typeof type !== 'string') continue;
 
           if (type === 'assistant_delta') {
+            const dataRecord = asRecord(data) ?? {};
             const textDelta =
-              typeof (data as any)?.textDelta === 'string'
-                ? ((data as any).textDelta as string)
+              typeof dataRecord.textDelta === 'string'
+                ? dataRecord.textDelta
                 : '';
             emitParsedEvent({ type: 'assistant_delta', data: { textDelta } });
             continue;
@@ -402,14 +417,13 @@ export class AIService {
           }
 
           if (type === 'error') {
+            const dataRecord = asRecord(data) ?? {};
             const message =
-              typeof (data as any)?.message === 'string'
-                ? ((data as any).message as string)
+              typeof dataRecord.message === 'string'
+                ? dataRecord.message
                 : 'AI 生成失败';
             const code =
-              typeof (data as any)?.code === 'string'
-                ? ((data as any).code as string)
-                : undefined;
+              typeof dataRecord.code === 'string' ? dataRecord.code : undefined;
             emitParsedEvent({ type: 'error', data: { message, code } });
             continue;
           }
@@ -461,7 +475,9 @@ export class AIService {
           parseUpstreamSse(buf.toString('utf8'));
         });
         stream.on('end', () => resolve());
-        stream.on('error', (err: unknown) => reject(err));
+        stream.on('error', (err: unknown) =>
+          reject(err instanceof Error ? err : new Error(String(err))),
+        );
       });
 
       if (!doneEmitted && !signal?.aborted) {
@@ -555,17 +571,17 @@ export class AIService {
     // 统一 options
     if (
       type === 'questionCheckbox' &&
-      (props as any).list &&
-      !(props as any).options
+      Array.isArray(props.list) &&
+      typeof props.options === 'undefined'
     ) {
-      (props as any).options = (props as any).list;
-      delete (props as any).list;
+      props.options = props.list;
+      delete props.list;
     }
     if (
       (type === 'questionRadio' || type === 'questionCheckbox') &&
-      (props as any).options
+      typeof props.options !== 'undefined'
     ) {
-      if (!Array.isArray((props as any).options)) (props as any).options = [];
+      if (!Array.isArray(props.options)) props.options = [];
     }
 
     return {

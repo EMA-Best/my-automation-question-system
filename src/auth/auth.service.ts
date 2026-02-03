@@ -30,6 +30,10 @@ export class AuthService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: pwd, ...userInfo } = user.toObject();
 
+    // 规范化：确保 token payload 里的 _id 是 string，避免下游把 ObjectId 当成 object 处理
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    (userInfo as any)._id = String(user._id);
+
     // return userInfo; // 不返回密码
     return {
       token: await this.jwtService.signAsync(userInfo), // 生成JWT令牌

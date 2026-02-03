@@ -263,7 +263,24 @@
   - body：`{ role: 'user' | 'admin' }`
 
 - `POST /api/admin/users/:id/reset-password`
-  - body：`{ strategy: 'random' | 'default' }` 或 `{ newPassword: string }`（不推荐明文回传）
+  - body（推荐最小契约）：`{ strategy: 'random' | 'default' }`
+    - `default`：使用 `DEFAULT_RESET_PASSWORD`（默认 `123456`，长度需 6~12）
+    - `random`：生成随机临时密码
+  - 返回（200）：
+    - `mustChangePassword: true`（固定为 true）
+    - `strategy: 'random' | 'default'`
+    - `newPassword?: string`（仅 random 时返回；只显示一次）
+  - 安全说明：
+    - 数据库存储为 bcrypt hash（不保存明文）
+    - `newPassword` 仅用于管理员端一次性展示（建议展示后提示用户尽快修改）
+
+#### 3.3.5 用户侧强制改密（配合重置密码）
+
+- 用户信息：`GET /api/user/info`
+  - 返回：`{ username, nickname, role, mustChangePassword }`
+- 用户改密：`PATCH /api/user/password`
+  - 成功后：更新密码 hash，并将 `mustChangePassword=false`
+  - 前端可提示重新登录（按你现有改密流程）
 
 > 返回结构建议统一：`{ errno: 0, data, msg }`（与你前端 axios 拦截器一致）
 

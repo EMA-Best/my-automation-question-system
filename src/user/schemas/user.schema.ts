@@ -44,6 +44,47 @@ export class User {
     default: null,
   })
   lastLoginAt?: Date | null;
+
+  @Prop({
+    type: Boolean,
+    default: false,
+    index: true,
+  })
+  mustChangePassword: boolean;
+
+  // 密码审计（不记录明文，仅记录时间/来源/操作者/策略/IP）
+  @Prop({
+    type: Date,
+    default: null,
+  })
+  passwordUpdatedAt?: Date | null;
+
+  @Prop({
+    type: String,
+    enum: ['user', 'admin', 'system'],
+    default: null,
+  })
+  passwordUpdatedByRole?: 'user' | 'admin' | 'system' | null;
+
+  // 对于 user：一般是 username；对于 admin：操作者 admin username
+  @Prop({
+    type: String,
+    default: null,
+  })
+  passwordUpdatedBy?: string | null;
+
+  @Prop({
+    type: String,
+    default: null,
+  })
+  passwordUpdatedIp?: string | null;
+
+  @Prop({
+    type: String,
+    enum: ['random', 'default', 'manual'],
+    default: null,
+  })
+  passwordResetStrategy?: 'random' | 'default' | 'manual' | null;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

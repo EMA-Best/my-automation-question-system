@@ -15,6 +15,15 @@ import { Public } from 'src/auth/decorators/public.decorator';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 
+type JwtUser = { _id?: unknown; username?: unknown };
+type AuthedRequest = { user?: JwtUser; ip?: unknown };
+
+function getUserIdFromReq(req: AuthedRequest): string {
+  const raw = req.user?._id;
+  if (typeof raw === 'string') return raw;
+  return '';
+}
+
 @Controller('user')
 export class UserController {
   // 依赖注入用户服务
@@ -33,9 +42,12 @@ export class UserController {
 
   // 获取用户信息
   @Get('info')
-  @Redirect('/api/auth/profile', 302) // http状态码 GET - 301永久重定向 302临时重定向
-  info() {
-    return;
+  async info(@Request() req: AuthedRequest) {
+    const userId = getUserIdFromReq(req);
+    if (!userId) {
+      throw new HttpException('未登录', HttpStatus.UNAUTHORIZED);
+    }
+    return await this.userService.getUserInfo(userId);
   }
 
   // 用户登录
@@ -48,9 +60,11 @@ export class UserController {
 
   // 更新用户昵称（需登录）
   @Patch('profile')
-  async updateProfile(@Body() body: UpdateProfileDto, @Request() req) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const userId = String(req.user?._id ?? '');
+  async updateProfile(
+    @Body() body: UpdateProfileDto,
+    @Request() req: AuthedRequest,
+  ) {
+    const userId = getUserIdFromReq(req);
     if (!userId) {
       throw new HttpException('未登录', HttpStatus.UNAUTHORIZED);
     }
@@ -59,16 +73,23 @@ export class UserController {
 
   // 修改用户密码（需登录）
   @Patch('password')
-  async updatePassword(@Body() body: UpdatePasswordDto, @Request() req) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const userId = String(req.user?._id ?? '');
+  async updatePassword(
+    @Body() body: UpdatePasswordDto,
+    @Request() req: AuthedRequest,
+  ) {
+    const userId = getUserIdFromReq(req);
     if (!userId) {
       throw new HttpException('未登录', HttpStatus.UNAUTHORIZED);
     }
+
+    const actorUsername =
+      typeof req.user?.username === 'string' ? req.user.username : undefined;
+    const ip = typeof req.ip === 'string' ? req.ip : undefined;
     return await this.userService.changePassword(
       userId,
       body.oldPassword,
       body.newPassword,
+      { actorUsername, ip },
     );
   }
 }

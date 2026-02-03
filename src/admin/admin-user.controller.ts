@@ -70,11 +70,15 @@ export class AdminUserController {
   async resetPassword(
     @Param('id') id: string,
     @Body() body: AdminUserResetPasswordDto,
+    @Request() req: { user: JwtUser; ip?: unknown },
   ): Promise<unknown> {
+    const ip = typeof req.ip === 'string' ? req.ip : undefined;
     return await this.adminUserService.resetPassword({
       targetUserId: id,
       strategy: body.strategy,
       newPassword: body.newPassword,
+      actorUsername: req.user.username,
+      ip,
     });
   }
 
