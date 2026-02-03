@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Button,
   Checkbox,
@@ -22,6 +22,7 @@ import {
   getAdminQuestionDetailService,
   getAdminReviewListService,
   rejectAdminReviewService,
+  type GetAdminReviewListParams,
   type AdminReviewListItem,
   type AdminReviewListRes,
   type ReviewStatus,
@@ -58,31 +59,44 @@ const AdminReviews: FC = () => {
   useTitle('小伦问卷 - 管理后台 - 审核队列');
 
   const [form] = Form.useForm<QueryState>();
-  const [queryState, setQueryState] = useState<QueryState>({
-    ...defaultQueryState,
+  const [requestParams, setRequestParams] = useState<GetAdminReviewListParams>({
+    page: 1,
+    pageSize: 10,
+    keyword: defaultQueryState.keyword,
     status: 'PendingReview',
   });
-  const [queryVersion, setQueryVersion] = useState(0);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
 
-  const fetchList = useCallback(async () => {
-    const res = await getAdminReviewListService({
-      page,
-      pageSize,
-      ...queryState,
-    });
-    return res;
-  }, [page, pageSize, queryState]);
-
-  const { data, loading, refresh } = useRequest(fetchList, {
-    refreshDeps: [page, pageSize, queryState, queryVersion],
+  const {
+    data,
+    loading,
+    run: runFetch,
+    cancel: cancelFetch,
+    mutate,
+    refresh,
+  } = useRequest(getAdminReviewListService, {
+    manual: true,
   });
 
+  useEffect(() => {
+    // 避免竞态：查询条件变化时取消上一轮请求，只让“最后一次”请求落地
+    cancelFetch();
+    // 清空旧数据，避免表格短暂展示上一轮结果
+    mutate(undefined);
+    runFetch(requestParams);
+  }, [cancelFetch, mutate, requestParams, runFetch]);
+
+  const page = requestParams.page;
+  const pageSize = requestParams.pageSize;
+
   const applyQuery = useCallback((values: QueryState) => {
-    setPage(1);
-    setQueryState(values);
-    setQueryVersion((v) => v + 1);
+    setRequestParams((prev) => {
+      return {
+        ...prev,
+        page: 1,
+        keyword: values.keyword,
+        status: values.status,
+      };
+    });
   }, []);
 
   const onQuery = useCallback(async () => {
@@ -99,15 +113,17 @@ const AdminReviews: FC = () => {
 
   const onReset = useCallback(() => {
     const next: QueryState = { ...defaultQueryState, status: 'PendingReview' };
+
     form.setFieldsValue(next);
     applyQuery(next);
   }, [applyQuery, form]);
 
   const onRefresh = useCallback(() => {
-    // 即使查询条件不变，也强制触发一次重新请求
-    setQueryVersion((v) => v + 1);
-    refresh();
-  }, [refresh]);
+    // 强制刷新：仍然走 cancel + run，保证不会落地旧请求
+    cancelFetch();
+    mutate(undefined);
+    runFetch(requestParams);
+  }, [cancelFetch, mutate, requestParams, runFetch]);
 
   const [previewOpen, setPreviewOpen] = useState(false);
 
@@ -366,8 +382,13 @@ const AdminReviews: FC = () => {
               total,
               showSizeChanger: true,
               onChange: (nextPage, nextPageSize) => {
-                setPage(nextPage);
-                setPageSize(nextPageSize);
+                setRequestParams((prev) => {
+                  return {
+                    ...prev,
+                    page: nextPage,
+                    pageSize: nextPageSize,
+                  };
+                });
               },
             }}
           />
