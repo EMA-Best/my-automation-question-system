@@ -18,6 +18,9 @@ export type HomeOverviewStat = {
   answerCount: number;
 };
 
+export type AnswerCountItem = { questionId: string; answerCount: number };
+export type AnswerCountResponse = { list: AnswerCountItem[] };
+
 @Injectable()
 export class StatService {
   // 依赖注入AnswerService和QuestionService
@@ -226,5 +229,52 @@ export class StatService {
     const answerCount = agg[0]?.count ?? 0;
 
     return { createdCount, publishedCount, answerCount };
+  }
+
+  // 批量统计：一次请求拿到一组问卷的答卷数（缺失补 0）
+  async getAnswerCountByQuestionIds(
+    questionIds: string[],
+  ): Promise<AnswerCountResponse> {
+    const trimmed = questionIds
+      .map((id) => (typeof id === 'string' ? id.trim() : ''))
+      .filter(Boolean);
+
+    // 去重但保持顺序
+    const uniqueIds: string[] = [];
+    const seen = new Set<string>();
+    for (const id of trimmed) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      uniqueIds.push(id);
+    }
+
+    if (uniqueIds.length === 0) {
+      return { list: [] };
+    }
+
+    const agg = await this.answerModel.aggregate<{
+      _id: string;
+      answerCount: number;
+    }>([
+      { $match: { questionId: { $in: uniqueIds } } },
+      { $group: { _id: '$questionId', answerCount: { $sum: 1 } } },
+    ]);
+
+    const countMap = new Map<string, number>();
+    for (const row of agg) {
+      if (row && typeof row._id === 'string') {
+        countMap.set(
+          row._id,
+          typeof row.answerCount === 'number' ? row.answerCount : 0,
+        );
+      }
+    }
+
+    const list: AnswerCountItem[] = uniqueIds.map((questionId) => ({
+      questionId,
+      answerCount: countMap.get(questionId) ?? 0,
+    }));
+
+    return { list };
   }
 }

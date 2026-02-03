@@ -40,6 +40,7 @@ export type AdminDeletedQuestionListItem = {
   _id: unknown;
   id: string;
   title: string;
+  author: string;
   isPublished: boolean;
   pinned?: boolean;
   featured?: boolean;
@@ -171,11 +172,7 @@ export class AdminQuestionService {
     if (ownerRegex) {
       pipeline.push({
         $match: {
-          $or: [
-            { author: ownerRegex },
-            { 'owner.username': ownerRegex },
-            { 'owner.nickname': ownerRegex },
-          ],
+          author: ownerRegex,
         },
       });
     }
@@ -233,6 +230,7 @@ export class AdminQuestionService {
             $project: {
               id: { $toString: '$_id' },
               title: 1,
+              author: 1,
               isPublished: 1,
               pinned: 1,
               featured: 1,

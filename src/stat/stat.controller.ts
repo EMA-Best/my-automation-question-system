@@ -1,6 +1,11 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
-import { StatService, HomeOverviewStat } from './stat.service';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  StatService,
+  type AnswerCountResponse,
+  HomeOverviewStat,
+} from './stat.service';
 import { Public } from 'src/auth/decorators/public.decorator';
+import { AnswerCountDto } from './dto/answer-count.dto';
 
 @Controller('stat')
 export class StatController {
@@ -14,6 +19,14 @@ export class StatController {
   @Get('overview')
   getOverview(): Promise<HomeOverviewStat> {
     return this.statService.getOverview();
+  }
+
+  // 批量获取问卷答卷数量（一次请求拿全页）
+  @Post('questions/answer-count')
+  async getAnswerCountByQuestionIds(
+    @Body() body: AnswerCountDto,
+  ): Promise<AnswerCountResponse> {
+    return await this.statService.getAnswerCountByQuestionIds(body.questionIds);
   }
 
   // 获取问卷的统计信息
