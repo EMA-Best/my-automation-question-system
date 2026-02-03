@@ -37,7 +37,7 @@ const { Title } = Typography;
 
 type QueryState = {
   keyword: string;
-  ownerKeyword: string;
+  authorKeyword: string;
   isPublished?: boolean;
   auditStatus?: AuditStatus;
   feature?: 'featured' | 'pinned';
@@ -45,7 +45,10 @@ type QueryState = {
 
 const defaultQueryState: QueryState = {
   keyword: '',
-  ownerKeyword: '',
+  authorKeyword: '',
+  isPublished: undefined,
+  auditStatus: undefined,
+  feature: undefined,
 };
 
 const auditStatusColorMap: Record<AuditStatus, string> = {
@@ -130,11 +133,15 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
     refresh();
   }, [refresh]);
 
+  // console.log('data: ', data);
+
   const listData: AdminQuestionListRes | undefined = data;
 
   const tableDataSource = useMemo(() => {
     return listData?.list ?? [];
   }, [listData]);
+
+  // console.log('tableDataSource: ', tableDataSource);
 
   const questionById = useMemo(() => {
     const map = new Map<string, AdminQuestionListItem>();
@@ -313,6 +320,8 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
     return questionById.get(detailId) ?? null;
   }, [detailId, questionById]);
 
+  const detailAnswerCount = detailQuestion?.answerCount ?? 0;
+
   const columns = useMemo<ColumnsType<AdminQuestionListItem>>(() => {
     return [
       {
@@ -331,13 +340,10 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
         ellipsis: true,
       },
       {
-        title: '所属用户',
-        key: 'owner',
-        render: (_, row) => {
-          const { nickname, username } = row.owner || {};
-          const text = nickname || username;
-          return <span>{text}</span>;
-        },
+        title: '作者',
+        dataIndex: 'author',
+        key: 'author',
+        ellipsis: true,
       },
       {
         title: '状态',
@@ -479,9 +485,9 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
             </Col>
 
             <Col xs={24} sm={12} md={8} lg={6}>
-              <Form.Item name="ownerKeyword" label="用户">
+              <Form.Item name="authorKeyword" label="作者">
                 <Input
-                  placeholder="username/nickname"
+                  placeholder="author"
                   allowClear
                   className={styles.field}
                   onPressEnter={handlePressEnterQuery}
@@ -599,9 +605,9 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
                 children: detailQuestion.id,
               },
               {
-                key: 'owner',
-                label: '所属用户',
-                children: `${detailQuestion.owner?.nickname || '-'}（${detailQuestion.owner?.username || '-'}）`,
+                key: 'author',
+                label: '作者',
+                children: detailQuestion.author || '-',
               },
               {
                 key: 'status',
@@ -630,7 +636,7 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
               {
                 key: 'answerCount',
                 label: '答卷数',
-                children: detailQuestion.answerCount,
+                children: detailAnswerCount,
               },
               {
                 key: 'createdAt',

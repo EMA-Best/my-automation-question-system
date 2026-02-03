@@ -32,14 +32,14 @@ const { Title } = Typography;
 
 type QueryState = {
   keyword: string;
-  ownerKeyword: string;
+  authorKeyword: string;
   deletedByKeyword: string;
   deleteReasonKeyword: string;
 };
 
 const defaultQueryState: QueryState = {
   keyword: '',
-  ownerKeyword: '',
+  authorKeyword: '',
   deletedByKeyword: '',
   deleteReasonKeyword: '',
 };
@@ -64,7 +64,7 @@ const AdminTrash: FC = () => {
       page,
       pageSize,
       keyword: queryState.keyword || undefined,
-      ownerKeyword: queryState.ownerKeyword || undefined,
+      authorKeyword: queryState.authorKeyword || undefined,
       deletedByKeyword: queryState.deletedByKeyword || undefined,
       deleteReasonKeyword: queryState.deleteReasonKeyword || undefined,
     });
@@ -236,13 +236,11 @@ const AdminTrash: FC = () => {
         },
       },
       {
-        title: '所属用户',
-        key: 'owner',
+        title: '作者',
+        dataIndex: 'author',
+        key: 'author',
         width: 140,
-        render: (_, row) => {
-          const ownerText = row.owner.nickname || row.owner.username || '-';
-          return <span>{ownerText}</span>;
-        },
+        ellipsis: true,
       },
       {
         title: '删除人',
@@ -377,9 +375,9 @@ const AdminTrash: FC = () => {
             </Col>
 
             <Col xs={24} sm={12} md={8} lg={6}>
-              <Form.Item name="ownerKeyword" label="所属用户">
+              <Form.Item name="authorKeyword" label="作者">
                 <Input
-                  placeholder="用户名/昵称"
+                  placeholder="author（如 mikasa）"
                   allowClear
                   className={styles.field}
                   onPressEnter={handlePressEnterQuery}

@@ -2,6 +2,7 @@ import axios from './ajax';
 
 import type { AuditStatus, ReviewStatus } from '../types/audit';
 import { parseQuestionDetailRes, type QuestionDetail } from './question';
+import { getQuestionAnswerCountBatchService } from './stat';
 
 export type { AuditStatus, ReviewStatus };
 export type UserRole = 'user' | 'admin';
@@ -25,6 +26,27 @@ function getFirstString(
     if (typeof v === 'string') return v;
   }
   return '';
+}
+
+function getFirstNumber(
+  record: Record<string, unknown>,
+  keys: string[]
+): number | undefined {
+  for (const key of keys) {
+    const v = record[key];
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+    if (typeof v === 'string' && v.trim().length > 0) {
+      const parsed = Number(v);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+  return undefined;
+}
+
+function normalizeKeyword(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 function getFirstId(record: Record<string, unknown>, keys: string[]): string {
@@ -111,7 +133,11 @@ function parseOwnerInfo(value: unknown): OwnerInfo {
 export type AdminQuestionListItem = {
   id: string;
   title: string;
-  owner: OwnerInfo;
+  /**
+   * 作者（接口原始 author 值，如 mikasa）。
+   * 之所以用 string：列表页可直接用 Table 的 dataIndex 展示。
+   */
+  author: string;
   isPublished: boolean;
   auditStatus: AuditStatus;
   pinned: boolean;
@@ -119,6 +145,41 @@ export type AdminQuestionListItem = {
   answerCount: number;
   createdAt: string;
 };
+
+/**
+ * 答卷数缓存（会话级）：
+ * - 目的：避免在列表页翻页/筛选时重复查询相同问卷的答卷数
+ * - 注意：这是纯前端缓存，刷新页面即失效
+ */
+const answerCountCache = new Map<string, number>();
+
+async function enrichAnswerCountForList<
+  T extends { id: string; answerCount: number },
+>(list: T[]): Promise<T[]> {
+  if (list.length === 0) return list;
+
+  const ids = list.map((item) => item.id).filter(Boolean);
+  const toFetch = ids.filter((id) => !answerCountCache.has(id));
+
+  if (toFetch.length > 0) {
+    try {
+      const fetched = await getQuestionAnswerCountBatchService(toFetch);
+      Object.entries(fetched).forEach(([id, count]) => {
+        answerCountCache.set(id, count);
+      });
+    } catch {
+      // 统计接口失败时不阻塞列表展示：answerCount 保持 0（或旧值）
+    }
+  }
+
+  return list.map((item) => {
+    const cached = answerCountCache.get(item.id);
+    return {
+      ...item,
+      answerCount: typeof cached === 'number' ? cached : item.answerCount,
+    };
+  });
+}
 
 export type AdminQuestionListRes = {
   list: AdminQuestionListItem[];
@@ -131,7 +192,7 @@ export type GetAdminQuestionListParams = {
   page: number;
   pageSize: number;
   keyword?: string;
-  ownerKeyword?: string;
+  authorKeyword?: string;
   isPublished?: boolean;
   auditStatus?: AuditStatus;
   featured?: boolean;
@@ -142,7 +203,16 @@ export async function getAdminQuestionListService(
   params: GetAdminQuestionListParams
 ): Promise<AdminQuestionListRes> {
   const url = '/api/admin/questions';
-  const data = (await axios.get(url, { params })) as unknown;
+  // 后端实际字段：query 使用 author
+  const { authorKeyword, keyword, ...restParams } = params;
+  const requestParams: Record<string, unknown> = {
+    ...restParams,
+    keyword: normalizeKeyword(keyword),
+    author: normalizeKeyword(authorKeyword),
+    // 兼容旧实现：部分后端仍使用 ownerKeyword
+    ownerKeyword: normalizeKeyword(authorKeyword),
+  };
+  const data = (await axios.get(url, { params: requestParams })) as unknown;
   if (!isRecord(data)) {
     return {
       list: [],
@@ -178,35 +248,28 @@ export async function getAdminQuestionListService(
       if (typeof idRaw !== 'string') return;
       const title = typeof titleRaw === 'string' ? titleRaw : '';
 
-      const questionInfo = getFirstRecord(item, ['question', 'questionnaire']);
-      const ownerRaw =
-        item.owner ??
-        item.user ??
-        item.author ??
-        item.submitter ??
-        questionInfo?.owner ??
-        questionInfo?.user;
+      // 关键：author 使用接口返回的“原始字段值”（如 mikasa）
+      const author = typeof item.author === 'string' ? item.author : '';
 
       list.push({
         id: idRaw,
         title,
-        owner: parseOwnerInfo(ownerRaw),
+        author,
         isPublished: Boolean(item.isPublished),
         auditStatus: isAuditStatus(item.auditStatus)
           ? item.auditStatus
           : 'Draft',
         pinned: Boolean(item.pinned),
         featured: Boolean(item.featured),
-        answerCount:
-          typeof item.answerCount === 'number'
-            ? item.answerCount
-            : Number(item.answerCount) || 0,
+        // 注意：答卷数来自聚合统计，列表接口常常无法直接给出；这里统一用批量统计接口补齐
+        answerCount: 0,
         createdAt: typeof item.createdAt === 'string' ? item.createdAt : '',
       });
     });
   }
 
-  return { list, count, page, pageSize };
+  const enrichedList = await enrichAnswerCountForList(list);
+  return { list: enrichedList, count, page, pageSize };
 }
 
 export async function publishAdminQuestionService(
@@ -251,7 +314,8 @@ export async function softDeleteAdminQuestionService(
 export type AdminDeletedQuestionListItem = {
   id: string;
   title: string;
-  owner: OwnerInfo;
+  /** 作者（接口原始 author 值，如 mikasa） */
+  author: string;
   isPublished: boolean;
   pinned: boolean;
   featured: boolean;
@@ -273,7 +337,7 @@ export type GetAdminDeletedQuestionListParams = {
   page: number;
   pageSize: number;
   keyword?: string;
-  ownerKeyword?: string;
+  authorKeyword?: string;
   deletedByKeyword?: string;
   deleteReasonKeyword?: string;
   deletedAtStart?: string;
@@ -294,12 +358,8 @@ function parseAdminDeletedQuestionListItem(
     getFirstRecord(item, ['question'])?.title;
   const title = typeof titleRaw === 'string' ? titleRaw : '';
 
-  const ownerRaw =
-    item.owner ??
-    item.user ??
-    item.author ??
-    questionInfo?.owner ??
-    questionInfo?.user;
+  // 回收站作者同样取接口原始 author，不依赖 owner 字段
+  const author = typeof item.author === 'string' ? item.author : '';
 
   const deletedByRaw =
     item.deletedBy ??
@@ -319,17 +379,40 @@ function parseAdminDeletedQuestionListItem(
   const createdAtRaw = item.createdAt;
   const createdAt = typeof createdAtRaw === 'string' ? createdAtRaw : '';
 
+  const statInfo = getFirstRecord(item, ['stat', 'stats', 'summary']);
+  const nestedStatInfo = questionInfo
+    ? getFirstRecord(questionInfo, ['stat', 'stats', 'summary'])
+    : null;
+  const answerCountRaw =
+    item.answerCount ??
+    item.answer_count ??
+    item.answersCount ??
+    item.answerTotal ??
+    item.responseCount ??
+    item.responsesCount ??
+    item.submitCount ??
+    item.submissionCount ??
+    statInfo?.answerCount ??
+    statInfo?.responseCount ??
+    nestedStatInfo?.answerCount ??
+    nestedStatInfo?.responseCount ??
+    questionInfo?.answerCount ??
+    questionInfo?.answer_count ??
+    questionInfo?.answersCount ??
+    questionInfo?.responseCount ??
+    getFirstNumber(item, ['answerCount', 'responseCount', 'submitCount']);
+
   return {
     id: idRaw,
     title,
-    owner: parseOwnerInfo(ownerRaw),
+    author,
     isPublished: Boolean(item.isPublished),
     pinned: Boolean(item.pinned),
     featured: Boolean(item.featured),
     answerCount:
-      typeof item.answerCount === 'number'
-        ? item.answerCount
-        : Number(item.answerCount) || 0,
+      typeof answerCountRaw === 'number'
+        ? answerCountRaw
+        : Number(answerCountRaw) || 0,
     createdAt,
     deletedAt,
     deletedBy: parseOwnerInfo(deletedByRaw),
@@ -341,7 +424,26 @@ export async function getAdminDeletedQuestionListService(
   params: GetAdminDeletedQuestionListParams
 ): Promise<AdminDeletedQuestionListRes> {
   const url = '/api/admin/questions/deleted';
-  const data = (await axios.get(url, { params })) as unknown;
+  // 后端实际字段：query 使用 author
+  const {
+    authorKeyword,
+    keyword,
+    deletedByKeyword,
+    deleteReasonKeyword,
+    ...rest
+  } = params;
+  const requestParams: Record<string, unknown> = {
+    ...rest,
+    keyword: normalizeKeyword(keyword),
+    // 兼容：不同后端可能使用 author 或 authorKeyword
+    author: normalizeKeyword(authorKeyword),
+    authorKeyword: normalizeKeyword(authorKeyword),
+    // 兼容旧实现：部分后端仍使用 ownerKeyword
+    ownerKeyword: normalizeKeyword(authorKeyword),
+    deletedByKeyword: normalizeKeyword(deletedByKeyword),
+    deleteReasonKeyword: normalizeKeyword(deleteReasonKeyword),
+  };
+  const data = (await axios.get(url, { params: requestParams })) as unknown;
 
   if (!isRecord(data)) {
     return {
@@ -374,6 +476,7 @@ export async function getAdminDeletedQuestionListService(
     });
   }
 
+  // 回收站列表不展示答卷数据，避免触发批量答卷数统计接口
   return { list, count, page, pageSize };
 }
 

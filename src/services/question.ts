@@ -45,6 +45,21 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+function getFirstNumber(
+  record: Record<string, unknown>,
+  keys: string[]
+): number | undefined {
+  for (const key of keys) {
+    const v = record[key];
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+    if (typeof v === 'string' && v.trim().length > 0) {
+      const parsed = Number(v);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+  return undefined;
+}
+
 function parseQuestionListRes(value: unknown): QuestionListRes {
   if (!isRecord(value)) return { list: [], count: 0 };
 
@@ -73,10 +88,25 @@ function parseQuestionListRes(value: unknown): QuestionListRes {
           : undefined,
         auditReason:
           typeof item.auditReason === 'string' ? item.auditReason : undefined,
-        answerCount:
-          typeof item.answerCount === 'number'
-            ? item.answerCount
-            : Number(item.answerCount) || 0,
+        answerCount: (() => {
+          const answerCountRaw =
+            item.answerCount ??
+            item.answer_count ??
+            item.answersCount ??
+            item.answerTotal ??
+            item.responseCount ??
+            item.responsesCount ??
+            item.submitCount ??
+            item.submissionCount ??
+            getFirstNumber(item, [
+              'answerCount',
+              'responseCount',
+              'submitCount',
+            ]);
+          return typeof answerCountRaw === 'number'
+            ? answerCountRaw
+            : Number(answerCountRaw) || 0;
+        })(),
         createdAt: typeof item.createdAt === 'string' ? item.createdAt : '',
       });
     });
