@@ -10,6 +10,7 @@ import mongoose, { Model } from 'mongoose';
 import { nanoid } from 'nanoid';
 import type { QuestionDto } from './dto/question.dto';
 import { AIService, type AIGenerateStreamHandlers } from '../ai/ai.service';
+import { Answer, type AnswerDocument } from '../answer/schemas/answer.schema';
 import {
   QuestionReview,
   type QuestionReviewDocument,
@@ -39,6 +40,45 @@ export type QuestionWithAnswerCount = {
   answerCount: number;
 };
 
+export type FeaturedQuestionItem = {
+  id: string;
+  title: string;
+  desc: string;
+  featured: boolean;
+  pinned: boolean;
+  pinnedAt: Date | null;
+  questionCount: number;
+  answerCount: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+export type QuestionPreviewResponse = {
+  id: string;
+  title: string;
+  desc: string;
+  componentList: Question['componentList'];
+  featured: boolean;
+  pinned: boolean;
+  pinnedAt: Date | null;
+  questionCount: number;
+  answerCount: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+type FeaturedQuestionLeanDoc = {
+  _id: mongoose.Types.ObjectId;
+  title?: string;
+  desc?: string;
+  featured?: boolean;
+  pinned?: boolean;
+  pinnedAt?: Date | null;
+  componentList?: Question['componentList'];
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
 // 查询参数类型
 export interface FindAllListParams {
   keyword?: string;
@@ -65,9 +105,173 @@ export class QuestionService {
     private readonly questionModel: Model<QuestionDocument>,
     @InjectModel(QuestionReview.name)
     private readonly questionReviewModel: Model<QuestionReviewDocument>,
+    @InjectModel(Answer.name)
+    private readonly answerModel: Model<AnswerDocument>,
     // 依赖注入 AI 服务
     private readonly aiService: AIService,
   ) {}
+
+  /**
+   * 统计题目数量（用于首页/列表的“题目数”展示）
+   *
+   * 口径说明：
+   * - componentList 中既有真正的题目组件，也可能有“问卷信息/说明”类组件
+   * - 约定：type === 'questionInfo' 仅做展示说明，不计入题目数量
+   * - 约定：isHidden === true 的组件不展示给用户，也不计入题目数量
+   */
+  private countQuestions(componentList: Question['componentList'] | undefined) {
+    const list = Array.isArray(componentList) ? componentList : [];
+
+    // 约定：questionInfo questionParagraph questionTitle属于说明/标题，不计入题目数；隐藏组件也不计入
+    return list.filter(
+      (c) =>
+        c &&
+        c.type !== 'questionInfo' &&
+        c.type !== 'questionParagraph' &&
+        c.type !== 'questionTitle' &&
+        !c.isHidden,
+    ).length;
+  }
+
+  /**
+   * 批量统计答卷数量
+   *
+   * 为什么要做成“批量 + 聚合”的形式：
+   * - 如果列表里有 N 个问卷，逐个 countDocuments 会产生 N 次 DB 查询（N+1 问题）
+   * - 使用 aggregate + group 可以一次性拿到所有 questionId 的答卷数量
+   *
+   * 数据模型说明：
+   * - Answer.questionId 在本项目里存的是字符串（通常等于 Question._id.toString()）
+   */
+  private async getAnswerCountMap(
+    questionIds: string[],
+  ): Promise<Map<string, number>> {
+    const ids = questionIds
+      .map((id) => (typeof id === 'string' ? id.trim() : ''))
+      .filter(Boolean);
+
+    const map = new Map<string, number>();
+    if (ids.length === 0) return map;
+
+    // Answer.questionId 是字符串，存储的是 Question._id 的 toString()
+    const rows = await this.answerModel.aggregate<{
+      _id: string;
+      count: number;
+    }>([
+      { $match: { questionId: { $in: ids } } },
+      { $group: { _id: '$questionId', count: { $sum: 1 } } },
+    ]);
+
+    rows.forEach((r) => {
+      map.set(r._id, typeof r.count === 'number' ? r.count : 0);
+    });
+
+    return map;
+  }
+
+  /**
+   * 获取热门问卷列表（置顶/推荐）
+   *
+   * 公开接口约束：仅返回“未删除 + 已发布 +（置顶或推荐）”的问卷。
+   * - isDeleted=false：回收站数据不应出现在首页
+   * - isPublished=true：草稿不应对外可见
+   * - featured=true 或 pinned=true：只有运营标记过的才算“热门/推荐”
+   *
+   * 排序规则（与管理端常见习惯一致）：
+   * - pinned 在最前
+   * - pinnedAt 越新越靠前
+   * - featured 次之
+   * - updatedAt/_id 兜底
+   */
+  async getFeaturedQuestions(): Promise<FeaturedQuestionItem[]> {
+    const questions = await this.questionModel
+      .find<FeaturedQuestionLeanDoc>({
+        isDeleted: false,
+        isPublished: true,
+        $or: [{ featured: true }, { pinned: true }],
+      })
+      .select({
+        title: 1,
+        desc: 1,
+        featured: 1,
+        pinned: 1,
+        pinnedAt: 1,
+        componentList: 1,
+      })
+      .sort({ pinned: -1, pinnedAt: -1, featured: -1, updatedAt: -1, _id: -1 })
+      .lean();
+
+    // 批量拿到这些问卷的答卷数量
+    const ids = questions.map((q) => String(q._id));
+    const answerCountMap = await this.getAnswerCountMap(ids);
+
+    return questions.map((q) => {
+      const id = String(q._id);
+      return {
+        id,
+        title: q.title ?? '',
+        desc: q.desc ?? '',
+        featured: Boolean(q.featured),
+        pinned: Boolean(q.pinned),
+        pinnedAt: q.pinnedAt ?? null,
+        // 题目数：按约定口径计算（排除说明类组件、隐藏组件）
+        questionCount: this.countQuestions(q.componentList),
+        // 答卷数：来自 answers 聚合统计
+        answerCount: answerCountMap.get(id) ?? 0,
+      };
+    });
+  }
+
+  /**
+   * 获取问卷预览信息（公开）
+   *
+   * 仅允许访问已发布且未删除的问卷。
+   * 这与 findOnePublic 的逻辑不同：
+   * - findOnePublic 允许作者访问未发布问卷（用于填写/预览草稿）
+   * - preview 是给“公开预览页”用的，必须严格只返回已发布
+   */
+  async getQuestionPreview(id: string): Promise<QuestionPreviewResponse> {
+    // 先校验 ObjectId，避免 mongoose CastError
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new NotFoundException('问卷不存在');
+    }
+
+    const question = await this.questionModel
+      .findOne<FeaturedQuestionLeanDoc>({
+        _id: id,
+        isDeleted: false,
+        isPublished: true,
+      })
+      .select({
+        title: 1,
+        desc: 1,
+        componentList: 1,
+        featured: 1,
+        pinned: 1,
+        pinnedAt: 1,
+      })
+      .lean();
+
+    if (!question) {
+      throw new NotFoundException('问卷不存在');
+    }
+
+    const qid = String(question._id);
+    // 统计该问卷的答卷数量（仍复用批量聚合方法，便于后续扩展）
+    const answerCountMap = await this.getAnswerCountMap([qid]);
+
+    return {
+      id: qid,
+      title: question.title ?? '',
+      desc: question.desc ?? '',
+      componentList: question.componentList ?? [],
+      featured: Boolean(question.featured),
+      pinned: Boolean(question.pinned),
+      pinnedAt: question.pinnedAt ?? null,
+      questionCount: this.countQuestions(question.componentList),
+      answerCount: answerCountMap.get(qid) ?? 0,
+    };
+  }
 
   async create(username: string): Promise<QuestionDocument> {
     const question = new this.questionModel({

@@ -17,6 +17,7 @@ import {
   QuestionUpdateResult,
 } from './question.service';
 import { OptionalAuth } from 'src/auth/decorators/optional-auth.decorator';
+import { Public } from 'src/auth/decorators/public.decorator';
 import { AIGenerateQuestionDto } from './dto/ai-generate.dto';
 import type { Response, Request as ExpressRequest } from 'express';
 import type { AIGenerateStreamHandlers } from '../ai/ai.service';
@@ -26,13 +27,18 @@ export interface User {
   username: string;
 }
 
-@Controller('question')
+// 说明：该文件原先拆成了两个 Controller（QuestionController + QuestionsPublicController）。
+// 为了减少不必要的类拆分，同时保持路由不变，这里统一改为“根 Controller”，
+// 并在每个方法上显式写全路径：
+// - 私有/登录态接口仍为 /api/question/...
+// - 公开接口仍为 /api/questions/...
+@Controller()
 export class QuestionController {
   // 依赖注入问题服务
   constructor(private readonly questionService: QuestionService) {}
 
   // NestJS的 @Query() 装饰器默认将所有查询参数解析为字符串类型
-  @Get()
+  @Get('question')
   async findAll(
     @Query('keyword') keyword: string = '',
     @Query('pageNum') pageNum: string = '1',
@@ -77,14 +83,14 @@ export class QuestionController {
     };
   }
 
-  @Get(':id')
+  @Get('question/:id')
   @OptionalAuth()
   async findOne(@Param('id') id: string, @Request() req: { user?: User }) {
     const username = req.user?.username;
     return await this.questionService.findOnePublic(id, username);
   }
 
-  @Get(':id/export')
+  @Get('question/:id/export')
   async exportQuestion(
     @Param('id') id: string,
     @Request() req: { user: User },
@@ -93,19 +99,19 @@ export class QuestionController {
     return await this.questionService.exportQuestion(id, username);
   }
 
-  @Post()
+  @Post('question')
   async create(@Request() req: { user: User }) {
     const { username } = req.user;
     return await this.questionService.create(username);
   }
 
-  @Delete(':id')
+  @Delete('question/:id')
   async delete(@Param('id') id: string, @Request() req: { user: User }) {
     const { username } = req.user;
     return await this.questionService.delete(id, username);
   }
 
-  @Patch(':id')
+  @Patch('question/:id')
   async update(
     @Param('id') id: string,
     @Body() questionDto: unknown,
@@ -115,14 +121,14 @@ export class QuestionController {
     return await this.questionService.update(id, questionDto, username);
   }
 
-  @Post('import')
+  @Post('question/import')
   async importQuestion(@Body() body: unknown, @Request() req: { user: User }) {
     const { username } = req.user;
     return await this.questionService.importQuestion(body, username);
   }
 
   // 覆盖导入：把导入内容写入当前问卷（不新建）
-  @Post(':id/import')
+  @Post('question/:id/import')
   async importIntoQuestion(
     @Param('id') id: string,
     @Body() body: unknown,
@@ -132,7 +138,7 @@ export class QuestionController {
     return await this.questionService.importIntoQuestion(id, body, username);
   }
 
-  @Delete()
+  @Delete('question')
   async deleteMany(
     @Body() body: { ids: string[] },
     @Request() req: { user: User },
@@ -142,20 +148,20 @@ export class QuestionController {
     return await this.questionService.deleteMany(ids, username);
   }
 
-  @Post('duplicate/:id')
+  @Post('question/duplicate/:id')
   async duplicate(@Param('id') id: string, @Request() req: { user: User }) {
     const { username } = req.user;
     return await this.questionService.duplicate(id, username);
   }
 
   // 提交审核（迭代B）
-  @Post(':id/submit-review')
+  @Post('question/:id/submit-review')
   async submitReview(@Param('id') id: string, @Request() req: { user: User }) {
     const { username } = req.user;
     return await this.questionService.submitReview(id, username);
   }
 
-  @Post('ai-generate')
+  @Post('question/ai-generate')
   async aiGenerate(
     @Body() aiGenerateDto: AIGenerateQuestionDto,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -169,7 +175,7 @@ export class QuestionController {
   }
 
   // SSE 流式生成（ChatGPT 风格对话 + 结构化预览）
-  @Post('ai-generate/stream')
+  @Post('question/ai-generate/stream')
   async aiGenerateStream(
     @Body() body: unknown,
     @Request() req: ExpressRequest,
@@ -260,5 +266,52 @@ export class QuestionController {
 
     // 正常结束
     cleanup();
+  }
+
+  /**
+   * 公共问卷接口（给首页/公开页使用）
+   *
+   * 注意：项目在 main.ts 里设置了全局前缀 app.setGlobalPrefix('api')。
+   * 因此这里真实访问路径是：
+   * - /api/questions/...
+   *
+   * 另外：项目有全局 TransformInterceptor，会把所有接口响应统一包装成：
+   * { errno: 0, data: ... }
+   *
+   * @Public() 表示跳过登录校验（没有 token 也能访问）。
+   */
+
+  /**
+   * 获取热门问卷列表（置顶/推荐）
+   *
+   * 前端调用：GET /api/questions/featured
+   * 返回字段里包含：题目数量(questionCount) + 答卷数量(answerCount)
+   *
+   * 公开接口约束：
+   * - 只返回未删除(isDeleted=false) 且已发布(isPublished=true) 的问卷
+   * - 只返回 featured=true 或 pinned=true 的问卷
+   */
+  @Public()
+  @Get('questions/featured')
+  async getFeaturedQuestions() {
+    // 直接复用 QuestionService 的实现，保持业务逻辑集中在 service 层
+    return await this.questionService.getFeaturedQuestions();
+  }
+
+  /**
+   * 获取问卷预览信息（公开）
+   *
+   * 前端调用：GET /api/questions/:id/preview
+   * 用途：用于“预览/分享页/首页点击查看”，需要返回完整 componentList（题目/组件配置）
+   *
+   * 公开接口约束：
+   * - 只允许访问未删除且已发布的问卷
+   * - 如果 id 非法或数据不存在，会抛出 NotFoundException（最终由全局异常过滤器处理）
+   */
+  @Public()
+  @Get('questions/:id/preview')
+  async getQuestionPreview(@Param('id') id: string) {
+    // 参数名保持与前端路由一致：:id
+    return await this.questionService.getQuestionPreview(id);
   }
 }
