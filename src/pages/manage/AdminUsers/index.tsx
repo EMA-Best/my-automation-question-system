@@ -135,8 +135,13 @@ const AdminUsers: FC = () => {
 
   const onReset = useCallback(() => {
     setPage(1);
-    form.setFieldsValue(defaultQueryState);
-    setQueryState(defaultQueryState);
+    const next: QueryState = {
+      ...defaultQueryState,
+      role: undefined,
+      status: undefined,
+    };
+    form.setFieldsValue(next);
+    setQueryState(next);
   }, [form]);
 
   const onRefresh = useCallback(() => {
@@ -405,7 +410,7 @@ const AdminUsers: FC = () => {
             <Col xs={24} sm={12} md={8} lg={6}>
               <Form.Item name="keyword" label="关键词">
                 <Input
-                  placeholder="username/nickname"
+                  placeholder="用户名/昵称"
                   allowClear
                   className={styles.field}
                   onPressEnter={onPressEnterQuery}
