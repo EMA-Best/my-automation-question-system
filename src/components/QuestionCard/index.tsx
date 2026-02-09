@@ -17,16 +17,20 @@ import {
   LineChartOutlined,
   CopyOutlined,
   DeleteOutlined,
+  DownloadOutlined,
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { useRequest } from 'ahooks';
 import {
   duplicateQuestionService,
+  getQuestionService,
   updateQuestionService,
 } from '../../services/question';
 import { formatDateTime } from '../../utils/formatDateTime';
 import type { AuditStatus } from '../../types/audit';
+import useGetUserInfo from '../../hooks/useGetUserInfo';
+import { exportQuestionById } from '../../utils/exportQuestion';
 
 // 定义问卷卡片组件的props类型
 type propsType = {
@@ -47,6 +51,7 @@ const QuestionCard: FC<propsType> = (props: propsType) => {
   // console.log('问卷卡片props: ', props);
   // 导航器
   const navigate = useNavigate();
+  const { username, nickname } = useGetUserInfo();
   // 解构props中的属性值
   const { id, title, isPublished, isStar, answerCount, createdAt } = props;
   const { auditStatus, auditReason } = props;
@@ -147,6 +152,26 @@ const QuestionCard: FC<propsType> = (props: propsType) => {
     navigate(`/question/stat/${id}`);
   };
 
+  // 导出问卷（复用编辑页导出逻辑）
+  const [exporting, setExporting] = useState(false);
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await exportQuestionById({
+        id,
+        title,
+        author: username || nickname || '',
+        isStar: isStarState,
+        loadDetail: getQuestionService,
+      });
+    } catch {
+      message.error('导出失败');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // 如果问卷已被删除，则不渲染
   if (isDeleted) return null;
 
@@ -225,6 +250,16 @@ const QuestionCard: FC<propsType> = (props: propsType) => {
                 复制
               </Button>
             </Popconfirm>
+
+            <Button
+              type="text"
+              size="small"
+              icon={<DownloadOutlined />}
+              onClick={handleExport}
+              disabled={exporting}
+            >
+              导出
+            </Button>
 
             <Button
               type="text"

@@ -22,6 +22,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { useRequest, useTitle } from 'ahooks';
 import {
   getAdminQuestionListService,
+  getAdminQuestionDetailService,
   publishAdminQuestionService,
   softDeleteAdminQuestionService,
   unpublishAdminQuestionService,
@@ -32,6 +33,7 @@ import {
 } from '../../../services/admin';
 import styles from './index.module.scss';
 import { formatDateTime } from '../../../utils/formatDateTime';
+import { exportQuestionById } from '../../../utils/exportQuestion';
 
 const { Title } = Typography;
 
@@ -92,6 +94,7 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
   const [pageSize, setPageSize] = useState(10);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailId, setDetailId] = useState<string>('');
+  const [exportingId, setExportingId] = useState<string>('');
 
   const fetchList = useCallback(async () => {
     const { feature, ...restQuery } = queryState;
@@ -155,6 +158,7 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
 
   type ActionType =
     | 'detail'
+    | 'export'
     | 'publish'
     | 'unpublish'
     | 'togglePinned'
@@ -212,6 +216,24 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
       if (typedAction === 'detail') {
         setDetailId(id);
         setDetailOpen(true);
+        return;
+      }
+
+      if (typedAction === 'export') {
+        if (exportingId === id) return;
+        setExportingId(id);
+        exportQuestionById({
+          id,
+          title: row.title,
+          author: row.author,
+          loadDetail: getAdminQuestionDetailService,
+        })
+          .catch(() => {
+            message.error('导出失败');
+          })
+          .finally(() => {
+            setExportingId('');
+          });
         return;
       }
 
@@ -308,7 +330,7 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
         });
       }
     },
-    [openDeleteModal, questionById, refresh]
+    [exportingId, openDeleteModal, questionById, refresh]
   );
 
   const handleCloseDetail = useCallback(() => {
@@ -402,6 +424,15 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
                 onClick={handleActionClick}
               >
                 详情
+              </Button>
+              <Button
+                type="link"
+                data-action="export"
+                data-id={row.id}
+                onClick={handleActionClick}
+                disabled={exportingId === row.id}
+              >
+                导出
               </Button>
               <Button
                 type="link"
