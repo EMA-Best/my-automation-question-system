@@ -9,6 +9,7 @@ import {
   DeleteOutlined,
   AuditOutlined,
   TeamOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import { createQuestionService } from '../../services/question';
 import { useRequest } from 'ahooks';
@@ -46,6 +47,11 @@ const ManageLayout: FC = () => {
 
   const toUsers = () => {
     navigate(routePath.MANAGE_USERS);
+  };
+
+  // 跳转到模板管理页
+  const toTemplates = () => {
+    navigate(routePath.MANAGE_TEMPLATES);
   };
 
   // 新建问卷按钮的回调
@@ -125,6 +131,16 @@ const ManageLayout: FC = () => {
               onClick={toUsers}
             >
               用户管理
+            </Button>
+            <Button
+              type={
+                pathname.startsWith('/manage/templates') ? 'default' : 'text'
+              }
+              size="large"
+              icon={<AppstoreOutlined />}
+              onClick={toTemplates}
+            >
+              模板管理
             </Button>
           </Access>
         </Space>

@@ -16,6 +16,7 @@ import Trash from '../pages/manage/Trash';
 import Star from '../pages/manage/Star';
 import AdminReviews from '../pages/manage/AdminReviews';
 import AdminUsers from '../pages/manage/AdminUsers';
+import AdminTemplates from '../pages/manage/AdminTemplates';
 
 // 常用路由路径（注意：router 创建时会用到，必须定义在前）
 export const routePath = {
@@ -27,6 +28,7 @@ export const routePath = {
   MANAGE_TRASH: '/manage/trash',
   MANAGE_REVIEWS: '/manage/reviews',
   MANAGE_USERS: '/manage/users',
+  MANAGE_TEMPLATES: '/manage/templates',
   FORBIDDEN: '/403',
 };
 
@@ -91,6 +93,10 @@ const router = createBrowserRouter([
           {
             path: 'users',
             element: <AdminUsers />,
+          },
+          {
+            path: 'templates',
+            element: <AdminTemplates />,
           },
 
           // 兼容旧的管理后台路由（已取消中间菜单结构）
