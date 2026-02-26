@@ -95,6 +95,7 @@ export class AdminQuestionService {
 
     const baseMatch: Record<string, unknown> = {
       isDeleted: true,
+      isTemplate: { $ne: true }, // 排除模板，模板不走回收站逻辑
     };
 
     if (query.deletedAtStart || query.deletedAtEnd) {
@@ -281,7 +282,9 @@ export class AdminQuestionService {
     const page = query.page && query.page > 0 ? query.page : 1;
     const pageSize = query.pageSize && query.pageSize > 0 ? query.pageSize : 10;
 
-    const baseMatch: Record<string, unknown> = {};
+    const baseMatch: Record<string, unknown> = {
+      isTemplate: { $ne: true }, // 排除模板，模板通过专门的模板管理接口查看
+    };
 
     // 默认只返回未删除数据；回收站页可显式传 isDeleted=true
     if (query.isDeleted === 'true') baseMatch.isDeleted = true;

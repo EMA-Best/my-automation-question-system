@@ -9,6 +9,7 @@ export type Permission =
   | 'question:read:any'
   | 'question:update:any'
   | 'question:feature'
+  | 'template:manage'
   | 'review:read'
   | 'review:approve'
   | 'review:reject';
@@ -22,6 +23,7 @@ export const ALL_ADMIN_PERMISSIONS: Permission[] = [
   'question:read:any',
   'question:update:any',
   'question:feature',
+  'template:manage',
   'review:read',
   'review:approve',
   'review:reject',

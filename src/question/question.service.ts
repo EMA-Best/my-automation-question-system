@@ -188,6 +188,7 @@ export class QuestionService {
       .find<FeaturedQuestionLeanDoc>({
         isDeleted: false,
         isPublished: true,
+        isTemplate: { $ne: true }, // 排除模板
         $or: [{ featured: true }, { pinned: true }],
       })
       .select({
@@ -703,11 +704,13 @@ export class QuestionService {
     const matchStage: {
       author: string;
       isDeleted: boolean;
+      isTemplate?: { $ne: true };
       title?: { $regex: RegExp };
       isStar?: boolean;
     } = {
       author,
       isDeleted,
+      isTemplate: { $ne: true }, // 排除模板，只返回普通问卷
     };
 
     if (isStar != null) {
@@ -770,11 +773,13 @@ export class QuestionService {
     const whereOpt: {
       author: string;
       isDeleted: boolean;
+      isTemplate?: { $ne: true };
       title?: { $regex: RegExp };
       isStar?: boolean;
     } = {
       author,
       isDeleted,
+      isTemplate: { $ne: true }, // 排除模板
     };
 
     if (isStar != null) {
