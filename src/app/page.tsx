@@ -1,6 +1,9 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { getFeaturedQuestions } from "@/services/question";
+// 顶部状态栏：显示导航 + 登录状态
+// 问卷填写页（/question/[id]）和填写成功页（/success）不引入此组件，保持纯净答题体验
+import TopBar from "@/components/TopBar";
 
 export const metadata: Metadata = {
   title: "问卷系统 - 首页",
@@ -84,8 +87,13 @@ async function QuestionList() {
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 to-purple-50 py-12 px-4">
-      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+    // 整体页面结构：TopBar（吸顶） + 主体内容区
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-purple-50">
+      {/* 顶部导航栏：服务端读取 Session，显示登录状态 */}
+      <TopBar />
+      {/* 主体内容区：上下内边距 + 水平居中 */}
+      <div className="py-12 px-4">
+        <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
         {/* 标题区域 */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-800 mb-4">
@@ -151,10 +159,14 @@ export default function Home() {
             <button className="px-8 py-3 bg-linear-to-r from-blue-500 to-purple-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75">
               创建问卷
             </button>
-            <button className="px-8 py-3 bg-white text-gray-800 font-medium rounded-lg shadow-md border border-gray-300 hover:shadow-lg transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75">
+            <Link
+              href="/templates"
+              className="px-8 py-3 bg-white text-gray-800 font-medium rounded-lg shadow-md border border-gray-300 hover:shadow-lg transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 text-center"
+            >
               浏览模板
-            </button>
+            </Link>
           </div>
+        </div>
         </div>
       </div>
     </div>

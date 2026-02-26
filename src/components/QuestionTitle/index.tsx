@@ -8,8 +8,6 @@ type PropsType = {
 };
 
 const QuestionTitle: FC<PropsType> = (props) => {
-  console.log("props:", props);
-
   const { text, level, isCenter } = props;
   const centerClass = isCenter ? "text-center" : "";
 
@@ -29,7 +27,9 @@ const QuestionTitle: FC<PropsType> = (props) => {
   }
   if (level === 3) {
     return (
-      <h3 className={`text-2xl font-semibold text-gray-700 mb-3 ${centerClass}`}>
+      <h3
+        className={`text-2xl font-semibold text-gray-700 mb-3 ${centerClass}`}
+      >
         {text}
       </h3>
     );

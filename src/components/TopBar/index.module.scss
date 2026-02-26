@@ -1,0 +1,178 @@
+/* TopBar 顶部导航栏样式
+ * 使用 CSS Modules（.module.scss），类名在编译后自动加哈希，不会污染全局。
+ */
+
+// ------------------------------------
+// 整体容器：固定在顶部，白色背景 + 底部分割线
+// ------------------------------------
+.topbar {
+  position: sticky; // sticky 吸顶：滚动时固定，不遮挡内容（也可改为 fixed）
+  top: 0;
+  z-index: 100; // 保证在其他内容之上
+  width: 100%;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+// ------------------------------------
+// 内层布局：最大宽度 + 水平 padding + flex 两端对齐
+// ------------------------------------
+.inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// ------------------------------------
+// 左侧：品牌 + 导航
+// ------------------------------------
+.left {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+// 品牌区域（Logo 圆圈 + 文字）
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+
+  &:hover .brandName {
+    color: #3b82f6;
+  }
+}
+
+// Logo 圆圈（渐变背景 + 白色字母）
+.logoBox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+// 品牌文字
+.brandName {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+// 导航链接容器
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// 单个导航链接
+.navLink {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4b5563;
+  text-decoration: none;
+  transition:
+    background 0.15s,
+    color 0.15s;
+
+  &:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+  }
+}
+
+// ------------------------------------
+// 右侧：登录状态区域
+// ------------------------------------
+.right {
+  display: flex;
+  align-items: center;
+}
+
+// 已登录用户信息（头像 + 用户名 + 退出按钮）
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+// 头像圆圈（文字头像占位）
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+// 用户名文字
+.username {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 未登录时"登录"按钮
+.loginBtn {
+  padding: 7px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border-radius: 8px;
+  text-decoration: none;
+  transition:
+    opacity 0.2s,
+    box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+
+  &:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  }
+}
+
+// ------------------------------------
+// 小屏响应式：隐藏导航文字，仅保留 Logo
+// ------------------------------------
+@media (max-width: 480px) {
+  .brandName {
+    display: none;
+  }
+
+  .nav {
+    display: none;
+  }
+
+  .username {
+    display: none;
+  }
+}

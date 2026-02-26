@@ -1,5 +1,6 @@
 import { getQuestionPreview } from "@/services/question";
 import { getComponent } from "@/components";
+import TopBar from "@/components/TopBar";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -116,7 +117,10 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
 
   if (hasError) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="min-h-screen bg-gray-50">
+        {/* 顶部状态栏：服务端读取 Session，显示登录状态与导航 */}
+        <TopBar />
+        <div className="py-8 px-4">
         <div className="max-w-2xl mx-auto text-center py-12">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
             获取问卷信息失败
@@ -130,6 +134,7 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
           >
             ← 返回首页
           </Link>
+        </div>
         </div>
       </div>
     );
@@ -147,7 +152,10 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50">
+      {/* 顶部状态栏：服务端读取 Session，显示登录状态与导航 */}
+      <TopBar />
+      <div className="py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <Link
           href="/"
@@ -243,6 +251,7 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

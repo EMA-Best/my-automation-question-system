@@ -23,7 +23,6 @@ const QuestionRadio: FC<PropsType> = ({ fe_id, props }) => {
         className={`${isVertical ? "space-y-3" : "flex flex-wrap gap-x-8 gap-y-3"}`}
       >
         {options.map((opt) => {
-          console.log("cur opt: ", opt);
           const { value: val, text } = opt;
 
           return (
