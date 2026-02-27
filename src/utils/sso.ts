@@ -21,10 +21,11 @@
  *
  * 读取优先级：
  *   1. 环境变量 REACT_APP_C_APP_ORIGIN
- *   2. 默认值 '' (开发阶段可先留空，待部署时配置)
+ *   2. 默认值 'http://localhost:3000'（本地联调兜底）
  */
-// eslint-disable-next-line no-undef
-const C_APP_ORIGIN: string = process.env.REACT_APP_C_APP_ORIGIN ?? '';
+const C_APP_ORIGIN: string =
+  (globalThis as { process?: { env?: { REACT_APP_C_APP_ORIGIN?: string } } })
+    .process?.env?.REACT_APP_C_APP_ORIGIN ?? 'http://localhost:3000';
 
 /**
  * B 端自身的域名（用于拼接回跳地址）
@@ -207,8 +208,8 @@ export function ssoLogout(redirectTo?: string): void {
 
   const callbackUrl = redirectTo ?? getBAppOrigin();
 
-  // next-auth 登出入口
-  const logoutUrl = `${C_APP_ORIGIN}/api/auth/signout?callbackUrl=${encodeURIComponent(
+  // C 端静默登出入口（不经过 next-auth 默认确认页）
+  const logoutUrl = `${C_APP_ORIGIN}/api/auth/sso-signout?callbackUrl=${encodeURIComponent(
     callbackUrl
   )}`;
 

@@ -1,5 +1,5 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { routePath } from '../../router';
 import { DownOutlined, LoginOutlined, UserOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
@@ -16,10 +16,10 @@ import {
   updateUserInfoService,
 } from '../../services/user';
 import { useRequest } from 'ahooks';
+import { ssoLogout } from '../../utils/sso';
 
 const UserInfo: FC = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   // 获取用户信息
   const { username, nickname, role, mustChangePassword } = useGetUserInfo();
 
@@ -50,14 +50,16 @@ const UserInfo: FC = () => {
     dispatch(logoutReducer());
     removeToken();
     message.success('退出成功');
-    navigate(routePath.LOGIN);
-  }, [dispatch, navigate]);
+    const bReturn = `${window.location.origin}${routePath.LOGIN}`;
+    ssoLogout(bReturn);
+  }, [dispatch]);
 
   const forceRelogin = useCallback(() => {
     dispatch(logoutReducer());
     removeToken();
-    navigate(routePath.LOGIN);
-  }, [dispatch, navigate]);
+    const bReturn = `${window.location.origin}${routePath.LOGIN}`;
+    ssoLogout(bReturn);
+  }, [dispatch]);
 
   const openEditProfile = useCallback(() => {
     setIsEditProfileOpen(true);

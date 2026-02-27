@@ -6,6 +6,8 @@ import QuestionLayout from '../layouts/QuestionLayout';
 import ManageLayout from '../layouts/ManageLayout';
 import Home from '../pages/Home';
 import Login from '../pages/Login';
+import SsoBridge from '../pages/SsoBridge';
+import SsoLogout from '../pages/SsoLogout';
 import NotFound from '../pages/NotFound';
 import Register from '../pages/Register';
 import Forbidden from '../pages/Forbidden';
@@ -52,6 +54,14 @@ const router = createBrowserRouter([
         path: routePath.REGISTER,
         element: <Register />,
       },
+      {
+        path: '/sso-bridge',
+        element: <SsoBridge />,
+      },
+      {
+        path: '/sso-logout',
+        element: <SsoLogout />,
+      },
     ],
   },
   {
@@ -74,6 +84,10 @@ const router = createBrowserRouter([
         path: 'manage',
         element: <ManageLayout />,
         children: [
+          {
+            index: true,
+            element: <Navigate to={routePath.MANAGE_LIST} replace={true} />,
+          },
           {
             path: 'list',
             element: <List />,
@@ -129,6 +143,10 @@ const router = createBrowserRouter([
               },
             ],
           },
+          {
+            path: '*',
+            element: <Navigate to={routePath.MANAGE_LIST} replace={true} />,
+          },
         ],
       },
     ],
@@ -159,7 +177,9 @@ export const isNoNeedUserInfo = (pathname: string) => {
   return (
     pathname === routePath.HOME ||
     pathname === routePath.LOGIN ||
-    pathname === routePath.REGISTER
+    pathname === routePath.REGISTER ||
+    pathname === '/sso-bridge' ||
+    pathname === '/sso-logout'
   );
 };
 
