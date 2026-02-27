@@ -12,6 +12,7 @@ export class AuthController {
   @Public()
   @Post('login')
   async login(@Body() userInfo: LoginDto) {
+    // SSO 关键入口：B 端登录页与 C 端 fallback 都依赖该接口返回 token
     const { username, password } = userInfo;
     return await this.authService.signIn(username, password);
   }

@@ -36,6 +36,7 @@ export class AuthService {
 
     // return userInfo; // 不返回密码
     return {
+      // SSO 约定：B 端持有该 token，后续回传给 C 端 sso-callback 生成 C 会话
       token: await this.jwtService.signAsync(userInfo), // 生成JWT令牌
     };
   }

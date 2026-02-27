@@ -53,6 +53,7 @@ export class UserController {
   // 用户登录
   @Public()
   @Post('login')
+  // 兼容历史前端调用路径：/api/user/login -> /api/auth/login
   @Redirect('/api/auth/login', 307) // http状态码 POST - 307临时重定向 308永久重定向
   login() {
     return;
