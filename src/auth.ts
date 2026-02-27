@@ -9,6 +9,16 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
+const useSecureCookies = process.env.NODE_ENV === "production";
+const sessionCookieName = useSecureCookies
+  ? "__Secure-authjs.session-token"
+  : "authjs.session-token";
+const authSecret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+
+if (!authSecret) {
+  throw new Error("缺少 AUTH_SECRET 或 NEXTAUTH_SECRET，无法初始化认证");
+}
+
 declare module "next-auth" {
   interface Session {
     user: {
@@ -23,6 +33,21 @@ declare module "next-auth" {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: authSecret,
+  useSecureCookies,
+
+  cookies: {
+    sessionToken: {
+      name: sessionCookieName,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+      },
+    },
+  },
+
   providers: [
     // -------------------------------------------------------
     // 过渡方案：Credentials Provider（对接现有后端 /api/login）

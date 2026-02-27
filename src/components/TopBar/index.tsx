@@ -1,9 +1,11 @@
+"use client";
+
 /**
  * @file TopBar/index.tsx
- * @description 全局顶部状态栏 — Server Component
+ * @description 全局顶部状态栏 — Client Component
  *
  * 职责：
- *  1. 通过 next-auth 的 auth() 在服务端读取当前 Session（无需客户端请求）。
+ *  1. 通过 next-auth 的 useSession() 在客户端读取当前 Session。
  *  2. 已登录：显示用户名 + "退出登录"按钮。
  *  3. 未登录：显示"登录"按钮，点击跳转到 B 端统一登录页（`B_APP_ORIGIN/login`）。
  *  4. 显示站点导航（首页 / 模板中心）。
@@ -13,13 +15,14 @@
  *  填写页和成功页使用 PageWrapper，不引入此组件，保持纯净的答题体验。
  *
  * 设计原则：
- *  - 本组件为 Server Component，不加 'use client'，可直接 await auth()。
- *  - 登出按钮（有 onClick）拆分到 SignOutButton（Client Component），
- *    避免整个 TopBar 降级为 Client Component。
+ *  - 本组件为 Client Component，登录态可在登录回跳后实时刷新。
+ *  - 登出按钮保持拆分，复用现有交互样式。
  */
 
-import { auth } from "@/auth";
 import Link from "next/link";
+import { useMemo } from "react";
+import { useSession } from "next-auth/react";
+import { usePathname, useSearchParams } from "next/navigation";
 import SignOutButton from "./SignOutButton";
 import styles from "./index.module.scss";
 
@@ -37,14 +40,33 @@ import styles from "./index.module.scss";
  *   );
  * }
  */
-export default async function TopBar() {
-  // -------------------------------------------------------
-  // 在服务端读取 Session：
-  //  - 已登录：session.user 包含 id / name / email 等脱敏字段
-  //  - 未登录：session 为 null
-  // auth() 是 next-auth v5 的服务端 API，不会产生额外的客户端请求。
-  // -------------------------------------------------------
-  const session = await auth();
+export default function TopBar() {
+  const { data: session } = useSession();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const bAppOrigin =
+    process.env.NEXT_PUBLIC_B_APP_ORIGIN ?? "http://localhost:8000";
+  const cAppOrigin = useMemo(
+    () =>
+      (typeof window !== "undefined" ? window.location.origin : undefined) ??
+      process.env.NEXT_PUBLIC_C_APP_ORIGIN ??
+      process.env.NEXTAUTH_URL ??
+      "http://localhost:3000",
+    [],
+  );
+  const loginCallbackUrl = useMemo(() => {
+    // 动态回传：登录后回到用户当前所在页面（而非固定首页）
+    const callback = new URL(pathname || "/", cAppOrigin);
+    const rawSearch = searchParams?.toString();
+
+    if (rawSearch) {
+      callback.search = rawSearch;
+    }
+    callback.searchParams.set("sso", "1");
+
+    return callback.toString();
+  }, [cAppOrigin, pathname, searchParams]);
 
   return (
     <header className={styles.topbar}>
@@ -93,9 +115,9 @@ export default async function TopBar() {
             // ---- 未登录：显示"登录"按钮，跳转到 B 端统一登录页 ----
             // B 端登录成功后，将浏览器重定向到 C 端 SSO 回调端点：
             //   ${authBase}/api/auth/sso-callback?token=xx&username=xx&callbackUrl=xx
-            // SSO 回调端点设置 Session Cookie 后再跳回 callbackUrl（C 端首页）
+            // SSO 回调端点设置 Session Cookie 后再跳回 callbackUrl（当前 C 端页面）
             <a
-              href={`${process.env.NEXT_PUBLIC_B_APP_ORIGIN ?? "http://localhost:8000"}/login?callbackUrl=${encodeURIComponent("http://localhost:3000")}&authBase=${encodeURIComponent(process.env.NEXT_PUBLIC_C_APP_ORIGIN ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000")}`}
+              href={`${bAppOrigin}/login?callbackUrl=${encodeURIComponent(loginCallbackUrl)}&authBase=${encodeURIComponent(cAppOrigin)}`}
               className={styles.loginBtn}
             >
               登录

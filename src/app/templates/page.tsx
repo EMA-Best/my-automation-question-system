@@ -9,7 +9,6 @@
  */
 import type { Metadata } from "next";
 import Link from "next/link";
-// 顶部状态栏：服务端读取 Session，显示登录状态
 import TopBar from "@/components/TopBar";
 // "使用此模板"按鈕（Client Component）：负责调用 BFF 代理、处理 401 跳转登录
 import UseTemplateButton from "./_components/UseTemplateButton";
@@ -321,140 +320,139 @@ function TemplatePreview({ questions }: { questions: TemplateQuestion[] }) {
 
 export default function TemplatesPage() {
   return (
-    // 整体页面结构：TopBar（吸顶） + 主体内容区
     <div className="min-h-screen bg-linear-to-br from-blue-50 via-purple-50 to-pink-50">
-      {/* 顶部导航栏：服务端读取 Session，显示登录状态与导航链接 */}
       <TopBar />
-
       <div className="py-10 px-4">
-      <div className="max-w-7xl mx-auto">
-        {/* 页头区域 */}
-        <div className="flex items-start justify-between gap-6 mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <Link
-                href="/"
-                className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:shadow-sm transition-shadow"
-              >
-                返回首页
-              </Link>
-              <span className="text-sm text-gray-500">10 个精选模板</span>
+        <div className="max-w-7xl mx-auto">
+          {/* 页头区域 */}
+          <div className="flex items-start justify-between gap-6 mb-8">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <Link
+                  href="/"
+                  className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:shadow-sm transition-shadow"
+                >
+                  返回首页
+                </Link>
+                <span className="text-sm text-gray-500">10 个精选模板</span>
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900">问卷模板库</h1>
+              <p className="text-gray-600 mt-2 max-w-3xl">
+                每个模板卡片会展示结构与描述。将鼠标悬浮到卡片上，即可看到“选择此模板”按钮。
+              </p>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">问卷模板库</h1>
-            <p className="text-gray-600 mt-2 max-w-3xl">
-              每个模板卡片会展示结构与描述。将鼠标悬浮到卡片上，即可看到“选择此模板”按钮。
-            </p>
-          </div>
 
-          <div className="hidden md:block">
-            <div className="bg-white/80 backdrop-blur border border-gray-200 rounded-2xl px-5 py-4 shadow-sm">
-              <div className="text-sm text-gray-500">小提示</div>
-              <div className="text-gray-900 font-medium">
-                先选模板，再做个性化编辑
+            <div className="hidden md:block">
+              <div className="bg-white/80 backdrop-blur border border-gray-200 rounded-2xl px-5 py-4 shadow-sm">
+                <div className="text-sm text-gray-500">小提示</div>
+                <div className="text-gray-900 font-medium">
+                  先选模板，再做个性化编辑
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* 模板网格：大屏一行 5 个，超出自动换行 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
-          {templates.map((tpl) => {
-            const summary = getStructureSummary(tpl.questions);
+          {/* 模板网格：大屏一行 5 个，超出自动换行 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
+            {templates.map((tpl) => {
+              const summary = getStructureSummary(tpl.questions);
 
-            return (
-              <div
-                key={tpl.id}
-                className="group relative flex flex-col bg-white/90 backdrop-blur border border-gray-200 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
-              >
-                {/* Hover overlay */}
-                <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-blue-50/85 to-purple-50/85 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              return (
+                <div
+                  key={tpl.id}
+                  className="group relative flex flex-col bg-white/90 backdrop-blur border border-gray-200 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
+                >
+                  {/* Hover overlay */}
+                  <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-blue-50/85 to-purple-50/85 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                {/* 上：问卷结构（按填写页结构预览） */}
-                <div className="relative z-10 p-5 flex-1">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-xs font-semibold text-gray-700">
-                      问卷结构
+                  {/* 上：问卷结构（按填写页结构预览） */}
+                  <div className="relative z-10 p-5 flex-1">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-xs font-semibold text-gray-700">
+                        问卷结构
+                      </div>
+                      <div className="text-[11px] text-gray-500">
+                        预览前 6 项
+                      </div>
                     </div>
-                    <div className="text-[11px] text-gray-500">预览前 6 项</div>
-                  </div>
 
-                  <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                    <div className="pointer-events-none select-none transition-all duration-300 group-hover:opacity-20 group-hover:blur-[1px]">
-                      <TemplatePreview questions={tpl.questions} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 下：描述信息 */}
-                <div className="relative z-10 border-t border-gray-200 bg-white/75 backdrop-blur p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="text-lg font-semibold text-gray-900 leading-snug">
-                        {tpl.name}
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                        {tpl.description}
-                      </p>
+                    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                      <div className="pointer-events-none select-none transition-all duration-300 group-hover:opacity-20 group-hover:blur-[1px]">
+                        <TemplatePreview questions={tpl.questions} />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {tpl.tags.map((t) => (
-                      <span
-                        key={t}
-                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="mt-4">
-                    <div className="text-xs font-semibold text-gray-700 mb-2">
-                      结构概览
+                  {/* 下：描述信息 */}
+                  <div className="relative z-10 border-t border-gray-200 bg-white/75 backdrop-blur p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="text-lg font-semibold text-gray-900 leading-snug">
+                          {tpl.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                          {tpl.description}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {summary.map((s) => (
+
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {tpl.tags.map((t) => (
                         <span
-                          key={s.type}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-blue-50 text-blue-700 border border-blue-100"
+                          key={t}
+                          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200"
                         >
-                          <span>{s.label}</span>
-                          <span className="text-blue-600">×{s.count}</span>
+                          {t}
                         </span>
                       ))}
                     </div>
-                  </div>
-                </div>
 
-                {/*
-                 * Hover 覆盖层上的“使用此模板”按鈕
-                 * UseTemplateButton 是 Client Component，负责：
-                 *  1. 调用 POST /api/proxy/templates/:id/use（BFF 代理）
-                 *  2. 成功：跳转到 B 端编辑页
-                 *  3. 401（未登录）：跳转到 /auth/signin + callbackUrl，登录后自动回来继续执行
-                 */}
-                <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="w-full px-6">
-                    {/* pointer-events-auto 让按鈕在 pointer-events-none 遗传下仍可点击 */}
-                    <div className="pointer-events-auto flex flex-col items-stretch gap-2">
-                      <UseTemplateButton templateId={tpl.id} />
-                    </div>
-                    <div className="mt-2 text-[11px] text-gray-600 text-center">
-                      登录后自动克隆模板到我的问卷
+                    <div className="mt-4">
+                      <div className="text-xs font-semibold text-gray-700 mb-2">
+                        结构概览
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {summary.map((s) => (
+                          <span
+                            key={s.type}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-blue-50 text-blue-700 border border-blue-100"
+                          >
+                            <span>{s.label}</span>
+                            <span className="text-blue-600">×{s.count}</span>
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
 
-        {/* 底部说明 */}
-        <div className="mt-10 text-center text-sm text-gray-500">
-          没找到合适的？你也可以从任意模板开始，再按需增删题目。
+                  {/*
+                   * Hover 覆盖层上的“使用此模板”按鈕
+                   * UseTemplateButton 是 Client Component，负责：
+                   *  1. 调用 POST /api/proxy/templates/:id/use（BFF 代理）
+                   *  2. 成功：跳转到 B 端编辑页
+                   *  3. 401（未登录）：跳转到 /auth/signin + callbackUrl，登录后自动回来继续执行
+                   */}
+                  <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-full px-6">
+                      {/* pointer-events-auto 让按鈕在 pointer-events-none 遗传下仍可点击 */}
+                      <div className="pointer-events-auto flex flex-col items-stretch gap-2">
+                        <UseTemplateButton templateId={tpl.id} />
+                      </div>
+                      <div className="mt-2 text-[11px] text-gray-600 text-center">
+                        登录后自动克隆模板到我的问卷
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 底部说明 */}
+          <div className="mt-10 text-center text-sm text-gray-500">
+            没找到合适的？你也可以从任意模板开始，再按需增删题目。
+          </div>
         </div>
-      </div>
       </div>
     </div>
   );

@@ -75,7 +75,7 @@ export default function UseTemplateButton({
         const cAppOrigin =
           process.env.NEXT_PUBLIC_C_APP_ORIGIN ?? "http://localhost:3000";
         // callbackUrl 必须使用完整 C 端 URL，因为是从 B 端跳回来
-        const fullCallbackUrl = `${cAppOrigin}/templates/use-callback?templateId=${templateId}`;
+        const fullCallbackUrl = `${cAppOrigin}/templates/use-callback?templateId=${templateId}&sso=1`;
         window.location.href = `${bAppOrigin}/login?callbackUrl=${encodeURIComponent(fullCallbackUrl)}&authBase=${encodeURIComponent(cAppOrigin)}`;
       } else if (e.status === 403) {
         setError("该模板暂不可用（已下线或无权限）");

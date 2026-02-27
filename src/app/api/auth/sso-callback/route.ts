@@ -47,11 +47,27 @@ import { encode } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
+  const authSecret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+  if (!authSecret) {
+    return NextResponse.json(
+      {
+        error: "缺少 AUTH_SECRET 或 NEXTAUTH_SECRET",
+      },
+      { status: 500 },
+    );
+  }
+
   const { searchParams } = req.nextUrl;
 
   // ─── 1. 读取 B 端传来的参数 ────────────────────────
-  const token = searchParams.get("token"); // 后端签发的 access_token
-  const username = searchParams.get("username"); // 用户名
+  const token =
+    searchParams.get("token") ??
+    searchParams.get("access_token") ??
+    searchParams.get("accessToken"); // 后端签发的 access_token
+  const username =
+    searchParams.get("username") ??
+    searchParams.get("userName") ??
+    searchParams.get("name"); // 用户名
   const callbackUrl = searchParams.get("callbackUrl") ?? "/"; // 登录后要回到的页面
 
   // ─── 2. 参数校验 ──────────────────────────────────
@@ -67,8 +83,7 @@ export async function GET(req: NextRequest) {
 
   // ─── 3. 确定 Cookie 配置 ──────────────────────────
   // 生产环境（HTTPS）使用 __Secure- 前缀 + secure 标志
-  const useSecureCookies =
-    process.env.NEXTAUTH_URL?.startsWith("https://") ?? false;
+  const useSecureCookies = process.env.NODE_ENV === "production";
 
   // Cookie 名称必须与 next-auth v5 默认一致，auth() 才能正确解密读取
   const cookieName = useSecureCookies
@@ -77,6 +92,7 @@ export async function GET(req: NextRequest) {
 
   // Session 有效期：30 天（与 next-auth 默认值一致）
   const maxAge = 30 * 24 * 60 * 60;
+  const expires = new Date(Date.now() + maxAge * 1000);
 
   // ─── 4. 创建加密 JWT ─────────────────────────────
   // 使用 next-auth 的 encode() 函数，产出与正常登录完全一致的加密 Token
@@ -91,7 +107,7 @@ export async function GET(req: NextRequest) {
       email: null,
       accessToken: token,
     },
-    secret: process.env.AUTH_SECRET!,
+    secret: authSecret,
     salt: cookieName, // next-auth 使用 cookie name 作为加密盐值
     maxAge,
   });
@@ -111,6 +127,7 @@ export async function GET(req: NextRequest) {
     sameSite: "lax", // 允许顶级导航携带 Cookie
     path: "/", // 全站有效
     maxAge, // 过期时间 30 天
+    expires,
   });
 
   return response;
