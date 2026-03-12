@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { getFeaturedQuestions } from "@/services/question";
 import TopBar from "@/components/TopBar";
+import CreateQuestionButton from "./_components/CreateQuestionButton";
 
 export const metadata: Metadata = {
   title: "问卷系统 - 首页",
@@ -152,12 +153,15 @@ export default function Home() {
               立即创建您的第一个问卷，或者浏览更多模板获取灵感
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="px-8 py-3 bg-linear-to-r from-blue-500 to-purple-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75">
-                创建问卷
-              </button>
+              {/*
+               * 创建问卷按钮（Client Component）
+               * - 已登录：创建后直跳 B 端编辑页
+               * - 未登录：先去 B 端登录，登录后回到 C 端中转页自动创建并跳编辑页
+               */}
+              <CreateQuestionButton />
               <Link
                 href="/templates"
-                className="px-8 py-3 bg-white text-gray-800 font-medium rounded-lg shadow-md border border-gray-300 hover:shadow-lg transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 text-center"
+                className="px-8 py-3 bg-white text-gray-800 font-medium rounded-lg shadow-md border border-gray-300 hover:shadow-lg transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 text-center cursor-pointer"
               >
                 浏览模板
               </Link>

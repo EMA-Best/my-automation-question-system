@@ -10,6 +10,8 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
 const useSecureCookies = process.env.NODE_ENV === "production";
+// C 端会话统一有效期：1 天（与后端 JWT 1d 对齐，避免跨端登录态时长不一致）
+const SESSION_MAX_AGE_SECONDS = 24 * 60 * 60;
 const sessionCookieName = useSecureCookies
   ? "__Secure-authjs.session-token"
   : "authjs.session-token";
@@ -115,6 +117,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   session: {
     strategy: "jwt", // token 存于加密的 httpOnly Cookie，不发给浏览器
+    maxAge: SESSION_MAX_AGE_SECONDS,
   },
 
   callbacks: {

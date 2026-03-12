@@ -3,13 +3,16 @@
  * @description 模板列表页（公开，无需登录即可浏览）
  *
  * 设计说明：
- *  - 页面内的预览组件使用静态模拟数据展示结构（内容仅作示意）。
+ *  - 页面通过后端真实模板接口渲染，不再使用静态写死数据。
+ *  - 卡片预览优先使用模板详情 componentList，按真实题型与真实选项渲染。
  *  - “使用此模板”按鈕晢 UseTemplateButton，连接真实 SSO 登录流程。
  *  - 顶部显示 TopBar，展示登录状态。
  */
 import type { Metadata } from "next";
 import Link from "next/link";
 import TopBar from "@/components/TopBar";
+import { getTemplateDetail, getTemplateList } from "@/services/template";
+import type { TemplateDetail, TemplateListItem } from "@/types/template";
 // "使用此模板"按鈕（Client Component）：负责调用 BFF 代理、处理 401 跳转登录
 import UseTemplateButton from "./_components/UseTemplateButton";
 
@@ -19,202 +22,204 @@ export const metadata: Metadata = {
 };
 
 type TemplateQuestion = {
-  type: "title" | "paragraph" | "input" | "textarea" | "radio" | "checkbox";
+  type:
+    | "info"
+    | "title"
+    | "paragraph"
+    | "input"
+    | "textarea"
+    | "radio"
+    | "checkbox";
   label: string;
+  desc?: string;
   required?: boolean;
+  placeholder?: string;
+  options?: string[];
 };
 
-type QuestionnaireTemplate = {
-  id: string;
-  name: string;
-  description: string;
-  tags: string[];
-  questions: TemplateQuestion[];
+function getString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+/**
+ * 从 props.options 中提取真实选项文案。
+ * 兼容形态：[{ text: '男' }, { label: '女' }, '未知']。
+ */
+function getOptionTexts(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (typeof item === "string") return item.trim();
+      if (!item || typeof item !== "object") return "";
+      const record = item as Record<string, unknown>;
+      return (
+        getString(record.text) ||
+        getString(record.label) ||
+        getString(record.value)
+      );
+    })
+    .filter(Boolean)
+    .slice(0, 4);
+}
+
+/**
+ * 将模板详情里的真实组件，映射为卡片预览的简化题型。
+ *
+ * 目标：
+ * - 按“真实 componentList 顺序”展示前五个组件
+ * - 无法识别的组件类型自动跳过
+ */
+function mapRealComponentToPreviewQuestion(
+  component: TemplateDetail["componentList"][number],
+): TemplateQuestion | null {
+  // 隐藏组件不参与卡片预览，避免与编辑页实际可见内容不一致
+  if (component.isHidden) return null;
+
+  const rawType = component.type;
+  const rawTitle = getString(component.title) || "未命名题目";
+  const props = component.props ?? {};
+
+  // 题目文案在不同组件里字段不同，统一做多字段兜底
+  const propsTitle =
+    getString(props.title) ||
+    getString(props.text) ||
+    getString(props.label) ||
+    getString(props.name);
+  const label = propsTitle || rawTitle;
+
+  // 部分组件支持 required
+  const required = Boolean(props.required);
+
+  if (rawType === "questionInfo") {
+    const infoTitle = getString(props.title) || label;
+    const infoDesc = getString(props.desc) || getString(component.title);
+    return { type: "info", label: infoTitle, desc: infoDesc };
+  }
+
+  if (rawType === "questionTitle") {
+    return { type: "title", label, required };
+  }
+
+  if (rawType === "questionParagraph") {
+    const paragraphText =
+      getString(props.text) || getString(props.desc) || label;
+    return { type: "paragraph", label: paragraphText };
+  }
+
+  if (rawType === "questionInput") {
+    return {
+      type: "input",
+      label,
+      required,
+      placeholder: getString(props.placeholder) || "请输入...",
+    };
+  }
+
+  if (rawType === "questionTextarea") {
+    return {
+      type: "textarea",
+      label,
+      required,
+      placeholder: getString(props.placeholder) || "请输入...",
+    };
+  }
+
+  if (rawType === "questionRadio") {
+    return {
+      type: "radio",
+      label,
+      required,
+      options: getOptionTexts(props.options),
+    };
+  }
+
+  if (rawType === "questionCheckbox") {
+    return {
+      type: "checkbox",
+      label,
+      required,
+      options: getOptionTexts(props.options),
+    };
+  }
+
+  return null;
+}
+
+const SUMMARY_TYPE_TO_PREVIEW_TYPE: Record<string, TemplateQuestion["type"]> = {
+  questionTitle: "title",
+  questionParagraph: "paragraph",
+  questionInfo: "paragraph",
+  questionInput: "input",
+  questionTextarea: "textarea",
+  questionRadio: "radio",
+  questionCheckbox: "checkbox",
 };
 
-const TYPE_LABEL: Record<TemplateQuestion["type"], string> = {
-  title: "标题",
-  paragraph: "段落",
-  input: "输入",
-  textarea: "多行输入",
-  radio: "单选",
-  checkbox: "多选",
+const SUMMARY_TYPE_TO_LABEL: Record<string, string> = {
+  questionTitle: "标题",
+  questionParagraph: "说明段落",
+  questionInfo: "问卷信息",
+  questionInput: "填空题",
+  questionTextarea: "多行填空",
+  questionRadio: "单选题",
+  questionCheckbox: "多选题",
 };
 
-const templates: QuestionnaireTemplate[] = [
-  {
-    id: "event-feedback",
-    name: "活动反馈问卷",
-    description:
-      "适用于线下/线上活动后的满意度收集，包含满意度、亮点、建议与回访意愿。",
-    tags: ["通用", "满意度", "活动"],
-    questions: [
-      { type: "title", label: "活动反馈" },
-      { type: "paragraph", label: "感谢参与，请用 2 分钟完成反馈。" },
-      { type: "radio", label: "整体满意度", required: true },
-      { type: "checkbox", label: "你最喜欢的部分" },
-      { type: "textarea", label: "还有哪些建议？" },
-      { type: "radio", label: "是否愿意被回访" },
-    ],
-  },
-  {
-    id: "job-application",
-    name: "岗位应聘登记",
-    description:
-      "用于招聘收集候选人基础信息与求职意向，结构清晰，便于后续筛选与跟进。",
-    tags: ["招聘", "信息收集"],
-    questions: [
-      { type: "title", label: "应聘信息登记" },
-      { type: "input", label: "姓名", required: true },
-      { type: "input", label: "手机号", required: true },
-      { type: "input", label: "邮箱" },
-      { type: "radio", label: "期望岗位" },
-      { type: "textarea", label: "自我介绍/项目亮点" },
-    ],
-  },
-  {
-    id: "course-evaluation",
-    name: "课程评价问卷",
-    description:
-      "适用于培训/课程结束后的教学质量评估，覆盖内容难度、讲师表现与改进建议。",
-    tags: ["教育", "评价"],
-    questions: [
-      { type: "title", label: "课程评价" },
-      { type: "radio", label: "内容难度是否合适", required: true },
-      { type: "radio", label: "讲解是否清晰", required: true },
-      { type: "checkbox", label: "最有帮助的部分" },
-      { type: "textarea", label: "你希望增加哪些内容？" },
-    ],
-  },
-  {
-    id: "product-research",
-    name: "产品调研问卷",
-    description:
-      "用于探索用户画像与需求优先级，包含使用频率、痛点与功能偏好等关键问题。",
-    tags: ["调研", "产品"],
-    questions: [
-      { type: "title", label: "产品调研" },
-      { type: "radio", label: "使用频率" },
-      { type: "checkbox", label: "目前的主要痛点" },
-      { type: "radio", label: "最希望优先解决的问题" },
-      { type: "textarea", label: "对未来功能有什么期待？" },
-    ],
-  },
-  {
-    id: "customer-satisfaction",
-    name: "客户满意度（CSAT）",
-    description:
-      "适用于服务交付后快速测量满意度与改进方向，问题少、回收快、转化高。",
-    tags: ["服务", "满意度"],
-    questions: [
-      { type: "title", label: "满意度调查" },
-      { type: "radio", label: "本次体验满意吗？", required: true },
-      { type: "textarea", label: "可以说说原因吗？" },
-      { type: "radio", label: "是否愿意推荐给朋友" },
-    ],
-  },
-  {
-    id: "new-employee",
-    name: "新员工入职信息",
-    description:
-      "帮助 HR 快速收集入职必需信息与设备需求，减少反复沟通，提高 onboarding 效率。",
-    tags: ["HR", "入职"],
-    questions: [
-      { type: "title", label: "入职信息" },
-      { type: "input", label: "姓名", required: true },
-      { type: "input", label: "入职日期", required: true },
-      { type: "checkbox", label: "需要的设备" },
-      { type: "textarea", label: "其他备注" },
-    ],
-  },
-  {
-    id: "meeting-registration",
-    name: "会议报名表",
-    description: "适用于会议/沙龙报名，包含参会信息、饮食偏好与会前问题收集。",
-    tags: ["报名", "会议"],
-    questions: [
-      { type: "title", label: "会议报名" },
-      { type: "input", label: "姓名", required: true },
-      { type: "input", label: "公司/组织" },
-      { type: "radio", label: "参会方式（线下/线上）" },
-      { type: "checkbox", label: "饮食偏好" },
-      { type: "textarea", label: "你希望现场讨论的问题" },
-    ],
-  },
-  {
-    id: "after-sales",
-    name: "售后问题收集",
-    description:
-      "用于售后工单前置收集，帮助快速定位问题与复现路径，提升解决效率。",
-    tags: ["售后", "问题"],
-    questions: [
-      { type: "title", label: "售后问题反馈" },
-      { type: "input", label: "订单号", required: true },
-      { type: "radio", label: "问题类型", required: true },
-      { type: "textarea", label: "问题描述（尽量详细）", required: true },
-      { type: "checkbox", label: "期望的处理方式" },
-    ],
-  },
-  {
-    id: "nps-survey",
-    name: "NPS 推荐度调查",
-    description:
-      "经典 NPS 模板：推荐度 + 原因追问 + 改进建议，适合做长期追踪。",
-    tags: ["NPS", "增长"],
-    questions: [
-      { type: "title", label: "推荐度调查" },
-      { type: "radio", label: "你有多大可能推荐给朋友？", required: true },
-      { type: "textarea", label: "给出这个分数的原因" },
-      { type: "textarea", label: "我们可以改进的一件事" },
-    ],
-  },
-  {
-    id: "website-ux",
-    name: "网站体验（UX）反馈",
-    description:
-      "针对网站可用性与信息架构进行快速回访，适合版本上线后收集真实体验。",
-    tags: ["UX", "网站"],
-    questions: [
-      { type: "title", label: "网站体验反馈" },
-      { type: "radio", label: "是否容易找到需要的信息？", required: true },
-      { type: "checkbox", label: "遇到的问题" },
-      { type: "textarea", label: "你最想优化的一个地方" },
-      { type: "input", label: "（可选）联系方式" },
-    ],
-  },
-];
+/**
+ * 将列表接口中的 componentSummary 转成预览题型（最多 5 项）。
+ *
+ * 优势：
+ * - 无需额外拉取每个模板详情，避免 N+1 请求
+ * - 页面首屏更稳，后端临时抖动时失败面更小
+ */
+function summaryToPreviewQuestions(
+  summary?: Array<{ type: string; count: number }>,
+): TemplateQuestion[] {
+  if (!summary || summary.length === 0) return [];
+
+  const result: TemplateQuestion[] = [];
+  for (const item of summary) {
+    const previewType = SUMMARY_TYPE_TO_PREVIEW_TYPE[item.type];
+    if (!previewType) continue;
+
+    const label = SUMMARY_TYPE_TO_LABEL[item.type] ?? item.type;
+    const repeat = Number.isFinite(item.count) ? Math.max(1, item.count) : 1;
+
+    for (let i = 0; i < repeat; i += 1) {
+      if (result.length >= 5) return result;
+      result.push({ type: previewType, label });
+    }
+  }
+
+  return result;
+}
 
 function requiredLabel(label: string, required?: boolean) {
   return required ? `${label} *` : label;
 }
 
-function getStructureSummary(questions: TemplateQuestion[]) {
-  const counts = questions.reduce<Record<string, number>>((acc, q) => {
-    acc[q.type] = (acc[q.type] || 0) + 1;
-    return acc;
-  }, {});
-
-  const order: TemplateQuestion["type"][] = [
-    "title",
-    "paragraph",
-    "input",
-    "textarea",
-    "radio",
-    "checkbox",
-  ];
-
-  return order
-    .filter((t) => counts[t])
-    .map((t) => ({ type: t, label: TYPE_LABEL[t], count: counts[t] }));
-}
-
 function TemplatePreview({ questions }: { questions: TemplateQuestion[] }) {
-  const preview = questions.slice(0, 6);
+  // 按需求：每个模板卡片展示前 5 项组件
+  const preview = questions.slice(0, 5);
 
   return (
     <div className="space-y-4">
       {preview.map((q, idx) => {
         switch (q.type) {
+          case "info":
+            return (
+              <div
+                key={`${q.type}-${idx}`}
+                className="px-3 py-4 rounded-lg bg-white text-center space-y-1"
+              >
+                <h3 className="text-lg font-bold text-gray-900">{q.label}</h3>
+                {q.desc ? (
+                  <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+                    {q.desc}
+                  </p>
+                ) : null}
+              </div>
+            );
           case "title":
             return (
               <h3
@@ -242,7 +247,7 @@ function TemplatePreview({ questions }: { questions: TemplateQuestion[] }) {
                 <input
                   disabled
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 placeholder:text-gray-400"
-                  placeholder="请输入..."
+                  placeholder={q.placeholder || "请输入..."}
                 />
               </div>
             );
@@ -256,12 +261,16 @@ function TemplatePreview({ questions }: { questions: TemplateQuestion[] }) {
                   disabled
                   rows={3}
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-700 placeholder:text-gray-400 resize-none"
-                  placeholder="请填写..."
+                  placeholder={q.placeholder || "请填写..."}
                 />
               </div>
             );
           case "radio": {
-            const options = ["非常满意", "一般", "不满意"].slice(0, 3);
+            // 单选按模板真实 options 渲染，缺失时给最小兜底
+            const options =
+              q.options && q.options.length > 0
+                ? q.options.slice(0, 4)
+                : ["选项1", "选项2", "选项3"];
             return (
               <div key={`${q.type}-${idx}`} className="space-y-2">
                 <div className="text-xs font-medium text-gray-700">
@@ -286,7 +295,11 @@ function TemplatePreview({ questions }: { questions: TemplateQuestion[] }) {
             );
           }
           case "checkbox": {
-            const options = ["选项 A", "选项 B", "选项 C"].slice(0, 3);
+            // 多选按模板真实 options 渲染，缺失时给最小兜底
+            const options =
+              q.options && q.options.length > 0
+                ? q.options.slice(0, 4)
+                : ["选项1", "选项2", "选项3"];
             return (
               <div key={`${q.type}-${idx}`} className="space-y-2">
                 <div className="text-xs font-medium text-gray-700">
@@ -318,34 +331,142 @@ function TemplatePreview({ questions }: { questions: TemplateQuestion[] }) {
   );
 }
 
-export default function TemplatesPage() {
+type TemplateCardItem = {
+  id: string;
+  questions: TemplateQuestion[];
+};
+
+/**
+ * 构建模板卡片数据：
+ * - 先拉公开模板列表
+ * - 再并行拉取每个模板详情，用真实 componentList 生成预览（前 5 项）
+ * - 若某个详情拉取失败，回退到列表 summary 预览
+ * - 请求失败时返回空数组，防止页面在 Server Component 阶段直接崩溃
+ */
+async function getTemplateCards(): Promise<TemplateCardItem[]> {
+  try {
+    const listRes = await getTemplateList({ page: 1, pageSize: 20 });
+
+    const detailById = new Map<string, TemplateDetail>();
+
+    // 并行请求详情：使用 allSettled，确保单个模板失败不影响整体渲染
+    const detailResults = await Promise.allSettled(
+      listRes.list.map(async (tpl) => {
+        const detail = await getTemplateDetail(tpl.id);
+        return { id: tpl.id, detail };
+      }),
+    );
+
+    detailResults.forEach((item) => {
+      if (item.status !== "fulfilled") return;
+      detailById.set(item.value.id, item.value.detail);
+    });
+
+    return listRes.list.map((tpl: TemplateListItem) => {
+      const detail = detailById.get(tpl.id);
+
+      // 优先使用真实 componentList 的前五个组件
+      if (detail?.componentList?.length) {
+        const fromRealComponents = detail.componentList
+          .map(mapRealComponentToPreviewQuestion)
+          .filter((q): q is TemplateQuestion => Boolean(q))
+          .slice(0, 5);
+
+        if (fromRealComponents.length > 0) {
+          return {
+            id: tpl.id,
+            questions: fromRealComponents,
+          };
+        }
+      }
+
+      // 兜底：详情缺失或无法映射时，使用列表 summary
+      return {
+        id: tpl.id,
+        questions: summaryToPreviewQuestions(tpl.componentSummary),
+      };
+    });
+  } catch (error) {
+    console.error("[templates] 获取模板列表失败:", error);
+    return [];
+  }
+}
+
+export default async function TemplatesPage() {
+  const templates = await getTemplateCards();
+
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 via-purple-50 to-pink-50">
       <TopBar />
-      <div className="py-10 px-4">
+      <div className="py-12 px-4">
         <div className="max-w-7xl mx-auto">
-          {/* 页头区域 */}
-          <div className="flex items-start justify-between gap-6 mb-8">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
+          {/* 页头区域 - 美化版 */}
+          <div className="flex items-start justify-between gap-6 mb-10">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-4">
                 <Link
                   href="/"
-                  className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:shadow-sm transition-shadow"
+                  className="group inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border-2 border-gray-200 text-gray-700 hover:border-blue-300 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 font-medium"
                 >
+                  <svg
+                    className="w-4 h-4 transition-transform group-hover:-translate-x-0.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                    />
+                  </svg>
                   返回首页
                 </Link>
-                <span className="text-sm text-gray-500">10 个精选模板</span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-linear-to-r from-blue-50 to-purple-50 border border-blue-100 text-sm font-medium text-blue-700">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+                    />
+                  </svg>
+                  {templates.length} 个精选模板
+                </span>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">问卷模板库</h1>
-              <p className="text-gray-600 mt-2 max-w-3xl">
-                每个模板卡片会展示结构与描述。将鼠标悬浮到卡片上，即可看到“选择此模板”按钮。
+              <h1 className="text-4xl font-bold bg-linear-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-3">
+                问卷模板库
+              </h1>
+              <p className="text-gray-600 text-base leading-relaxed max-w-2xl">
+                每个模板卡片展示实际问卷结构。鼠标悬停在卡片上即可看到「使用此模板」按钮，一键开始编辑。
               </p>
             </div>
 
             <div className="hidden md:block">
-              <div className="bg-white/80 backdrop-blur border border-gray-200 rounded-2xl px-5 py-4 shadow-sm">
-                <div className="text-sm text-gray-500">小提示</div>
-                <div className="text-gray-900 font-medium">
+              <div className="bg-linear-to-br from-white to-blue-50/50 backdrop-blur border-2 border-blue-100 rounded-2xl px-6 py-5 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg
+                    className="w-4 h-4 text-blue-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <div className="text-sm font-semibold text-blue-700">
+                    小提示
+                  </div>
+                </div>
+                <div className="text-gray-900 font-medium text-base">
                   先选模板，再做个性化编辑
                 </div>
               </div>
@@ -355,8 +476,6 @@ export default function TemplatesPage() {
           {/* 模板网格：大屏一行 5 个，超出自动换行 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
             {templates.map((tpl) => {
-              const summary = getStructureSummary(tpl.questions);
-
               return (
                 <div
                   key={tpl.id}
@@ -365,63 +484,21 @@ export default function TemplatesPage() {
                   {/* Hover overlay */}
                   <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-blue-50/85 to-purple-50/85 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                  {/* 上：问卷结构（按填写页结构预览） */}
+                  {/* 卡片直接展示模板预览，不再额外套一层结构容器 */}
                   <div className="relative z-10 p-5 flex-1">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="text-xs font-semibold text-gray-700">
-                        问卷结构
-                      </div>
-                      <div className="text-[11px] text-gray-500">
-                        预览前 6 项
-                      </div>
-                    </div>
-
-                    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                      <div className="pointer-events-none select-none transition-all duration-300 group-hover:opacity-20 group-hover:blur-[1px]">
-                        <TemplatePreview questions={tpl.questions} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 下：描述信息 */}
-                  <div className="relative z-10 border-t border-gray-200 bg-white/75 backdrop-blur p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="text-lg font-semibold text-gray-900 leading-snug">
-                          {tpl.name}
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                          {tpl.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {tpl.tags.map((t) => (
-                        <span
-                          key={t}
-                          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200"
-                        >
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="mt-4">
-                      <div className="text-xs font-semibold text-gray-700 mb-2">
-                        结构概览
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {summary.map((s) => (
-                          <span
-                            key={s.type}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-blue-50 text-blue-700 border border-blue-100"
-                          >
-                            <span>{s.label}</span>
-                            <span className="text-blue-600">×{s.count}</span>
-                          </span>
-                        ))}
-                      </div>
+                    <div className="pointer-events-none select-none transition-all duration-300 group-hover:opacity-20 group-hover:blur-[1px]">
+                      <TemplatePreview
+                        questions={
+                          tpl.questions.length > 0
+                            ? tpl.questions
+                            : [
+                                {
+                                  type: "paragraph",
+                                  label: "该模板暂无可预览题目",
+                                },
+                              ]
+                        }
+                      />
                     </div>
                   </div>
 
@@ -433,14 +510,8 @@ export default function TemplatesPage() {
                    *  3. 401（未登录）：跳转到 /auth/signin + callbackUrl，登录后自动回来继续执行
                    */}
                   <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-full px-6">
-                      {/* pointer-events-auto 让按鈕在 pointer-events-none 遗传下仍可点击 */}
-                      <div className="pointer-events-auto flex flex-col items-stretch gap-2">
-                        <UseTemplateButton templateId={tpl.id} />
-                      </div>
-                      <div className="mt-2 text-[11px] text-gray-600 text-center">
-                        登录后自动克隆模板到我的问卷
-                      </div>
+                    <div className="pointer-events-auto">
+                      <UseTemplateButton templateId={tpl.id} />
                     </div>
                   </div>
                 </div>

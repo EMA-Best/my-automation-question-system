@@ -26,3 +26,42 @@ export async function getQuestionPreview(id: string) {
   const data = await GET(url);
   return data;
 }
+
+export type CreateQuestionRes = {
+  id?: string;
+  _id?: string;
+  questionId?: string;
+};
+
+/**
+ * 通过 C 端 BFF 代理创建新问卷（需登录）
+ *
+ * 对应接口：POST /api/proxy/question
+ * - 401：未登录
+ * - 200：返回新问卷对象（通常含 _id）
+ */
+export async function createQuestionByProxy(): Promise<CreateQuestionRes> {
+  const res = await fetch(`/api/proxy/question`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (res.status === 401) {
+    const err = new Error("UNAUTHORIZED") as Error & { status: number };
+    err.status = 401;
+    throw err;
+  }
+
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    const err = new Error(
+      (json as { msg?: string }).msg ?? `请求失败（${res.status}）`,
+    ) as Error & { status: number };
+    err.status = res.status;
+    throw err;
+  }
+
+  const json = await res.json();
+  // 兼容后端可能返回 { data: {...} } 或直接返回对象两种结构
+  return (json.data ?? json) as CreateQuestionRes;
+}

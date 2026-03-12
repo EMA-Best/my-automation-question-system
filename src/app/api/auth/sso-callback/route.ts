@@ -90,8 +90,8 @@ export async function GET(req: NextRequest) {
     ? "__Secure-authjs.session-token"
     : "authjs.session-token";
 
-  // Session 有效期：30 天（与 next-auth 默认值一致）
-  const maxAge = 30 * 24 * 60 * 60;
+  // Session 有效期：1 天（与后端 JWT expiresIn=1d 保持一致）
+  const maxAge = 24 * 60 * 60;
   const expires = new Date(Date.now() + maxAge * 1000);
 
   // ─── 4. 创建加密 JWT ─────────────────────────────

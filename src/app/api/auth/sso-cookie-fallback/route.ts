@@ -65,7 +65,8 @@ export async function GET(req: NextRequest) {
       ? "__Secure-authjs.session-token"
       : "authjs.session-token";
 
-    const maxAge = 30 * 24 * 60 * 60;
+    // 会话有效期统一为 1 天，和后端 JWT 保持一致
+    const maxAge = 24 * 60 * 60;
     const expires = new Date(Date.now() + maxAge * 1000);
 
     const sessionToken = await encode({

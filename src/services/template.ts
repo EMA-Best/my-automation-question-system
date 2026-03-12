@@ -20,7 +20,10 @@ import type {
 // -------------------------------------------------------
 // 工具：服务端（Server Component）直接请求后端基础 URL
 // -------------------------------------------------------
-const BACKEND_BASE = process.env.BACKEND_API_BASE ?? "http://localhost:3005";
+const BACKEND_BASE =
+  process.env.BACKEND_API_BASE ??
+  process.env.NEXT_PUBLIC_BACKEND_API_BASE ??
+  "http://localhost:3005";
 
 /**
  * 处理后端响应，统一判断 errno
@@ -67,11 +70,20 @@ export async function getTemplateList(
 
   const url = `${BACKEND_BASE}/api/templates${params ? `?${params}` : ""}`;
 
-  const res = await fetch(url, {
-    // Next.js默认对 Server Component 的 fetch 做缓存；
-    // 模板列表更新频率低，缓存 60 秒，兼顾性能与实时性
-    next: { revalidate: 60 },
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      // Next.js默认对 Server Component 的 fetch 做缓存；
+      // 模板列表更新频率低，缓存 60 秒，兼顾性能与实时性
+      next: { revalidate: 60 },
+    });
+  } catch (error) {
+    // 网络层错误（例如后端未启动、DNS 不可达）会在这里抛出，
+    // 提供更可读的上下文，便于快速定位配置或联调问题。
+    throw new Error(
+      `[template] fetch list failed: ${url}; reason: ${(error as Error)?.message ?? "unknown"}`,
+    );
+  }
 
   return handleRes<TemplateListRes>(res);
 }
