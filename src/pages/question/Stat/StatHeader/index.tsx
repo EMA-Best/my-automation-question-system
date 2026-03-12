@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import useGetPageInfo from '../../../../hooks/useGetPageInfo';
 import { LeftOutlined } from '@ant-design/icons';
 import { Button, Space, Typography } from 'antd';
+import { routePath } from '../../../../router';
 // 头部中间二维码部分
 import StatQRCodeElem from './StatQRCodeElem';
 
@@ -27,7 +28,8 @@ const StatHeader: FC = () => {
             <Button
               type="link"
               icon={<LeftOutlined />}
-              onClick={() => navigate(-1)}
+              // 固定返回管理问卷列表，避免回到登录中转历史页
+              onClick={() => navigate(routePath.MANAGE_LIST)}
             >
               返回
             </Button>

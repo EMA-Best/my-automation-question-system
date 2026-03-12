@@ -84,6 +84,7 @@ export default function useAIGenerateStream(
       let currentTargetAssistantId = assistantId;
       let streamDone = false;
       let summaryInserted = false;
+      let hasStructuredDelta = false;
 
       setMessages((prev) => [
         ...prev,
@@ -140,13 +141,13 @@ export default function useAIGenerateStream(
           }
 
           if (outputQueue.length === 0) {
-            if (streamDone && !summaryInserted) {
+            if (streamDone && !summaryInserted && hasStructuredDelta) {
               summaryInserted = true;
               insertSummaryMessage();
               // eslint-disable-next-line no-continue
               continue;
             }
-            if (streamDone && summaryInserted) {
+            if (streamDone && (summaryInserted || !hasStructuredDelta)) {
               break;
             }
             // eslint-disable-next-line no-await-in-loop
@@ -212,11 +213,13 @@ export default function useAIGenerateStream(
           }
 
           if (evt.event === 'page_info') {
+            hasStructuredDelta = true;
             onDelta?.({ event: 'page_info', data: evt.data });
             continue;
           }
 
           if (evt.event === 'component') {
+            hasStructuredDelta = true;
             onDelta?.({ event: 'component', data: evt.data });
             continue;
           }

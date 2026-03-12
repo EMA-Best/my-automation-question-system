@@ -31,6 +31,10 @@ import {
   type AdminQuestionListRes,
   type AuditStatus,
 } from '../../../services/admin';
+import {
+  createTemplateFromQuestionService,
+  updateAdminTemplateService,
+} from '../../../services/template';
 import styles from './index.module.scss';
 import { formatDateTime } from '../../../utils/formatDateTime';
 import { exportQuestionById } from '../../../utils/exportQuestion';
@@ -158,12 +162,14 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
 
   type ActionType =
     | 'detail'
+    | 'stat'
     | 'export'
     | 'publish'
     | 'unpublish'
     | 'togglePinned'
     | 'toggleFeatured'
-    | 'softDelete';
+    | 'softDelete'
+    | 'saveAsTemplate';
 
   type DeleteFormState = {
     reason: string;
@@ -173,6 +179,17 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
   const [deleteId, setDeleteId] = useState('');
   const [deleteTitle, setDeleteTitle] = useState('');
   const [deleteForm] = Form.useForm<DeleteFormState>();
+
+  // 转为模板相关状态
+  type SaveAsTemplateFormState = {
+    title: string;
+    templateDesc: string;
+  };
+
+  const [saveAsTemplateOpen, setSaveAsTemplateOpen] = useState(false);
+  const [saveAsTemplateId, setSaveAsTemplateId] = useState('');
+  const [saveAsTemplateForm] = Form.useForm<SaveAsTemplateFormState>();
+  const [savingAsTemplate, setSavingAsTemplate] = useState(false);
 
   const openDeleteModal = useCallback(
     (id: string, title: string) => {
@@ -187,6 +204,75 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
   const closeDeleteModal = useCallback(() => {
     setDeleteOpen(false);
   }, []);
+
+  // 打开转为模板弹窗
+  const openSaveAsTemplateModal = useCallback(
+    (id: string, title: string) => {
+      setSaveAsTemplateId(id);
+      setSaveAsTemplateOpen(true);
+      saveAsTemplateForm.setFieldsValue({
+        title: `${title}（模板）`,
+        templateDesc: '',
+      });
+    },
+    [saveAsTemplateForm]
+  );
+
+  // 关闭转为模板弹窗
+  const closeSaveAsTemplateModal = useCallback(() => {
+    setSaveAsTemplateOpen(false);
+    setSavingAsTemplate(false);
+  }, []);
+
+  // 执行转为模板操作
+  const handleSaveAsTemplateOk = useCallback(async () => {
+    if (!saveAsTemplateId) return;
+    try {
+      setSavingAsTemplate(true);
+      const values = await saveAsTemplateForm.validateFields();
+
+      // 步骤1：调用后端接口创建模板
+      const res = await createTemplateFromQuestionService(saveAsTemplateId);
+      const newTemplateId = (res as { id?: string })?.id;
+
+      if (!newTemplateId) {
+        throw new Error('创建模板成功但未返回模板ID');
+      }
+
+      // 步骤2：如果创建成功且用户修改了标题或填写了描述，立即更新模板信息
+      if (values.title || values.templateDesc) {
+        await updateAdminTemplateService(newTemplateId, {
+          title: values.title || undefined,
+          templateDesc: values.templateDesc || undefined,
+        });
+      }
+
+      message.success(
+        <span>
+          模板创建成功！
+          {newTemplateId ? (
+            <a
+              href={`/manage/admin-templates`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ marginLeft: 8 }}
+            >
+              查看模板管理
+            </a>
+          ) : null}
+        </span>,
+        5
+      );
+
+      setSaveAsTemplateOpen(false);
+      // 模板创建成功后刷新列表，后端会返回isTemplate=true
+      refresh();
+    } catch (error) {
+      // 错误提示由 ajax 拦截器统一处理
+    } finally {
+      setSavingAsTemplate(false);
+    }
+  }, [saveAsTemplateForm, saveAsTemplateId]);
 
   const handleDeleteOk = useCallback(async () => {
     if (!deleteId) return;
@@ -219,6 +305,11 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
         return;
       }
 
+      if (typedAction === 'stat') {
+        window.open(`/question/stat/${id}`, '_blank');
+        return;
+      }
+
       if (typedAction === 'export') {
         if (exportingId === id) return;
         setExportingId(id);
@@ -242,10 +333,15 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
         return;
       }
 
+      if (typedAction === 'saveAsTemplate') {
+        openSaveAsTemplateModal(id, row.title);
+        return;
+      }
+
       if (typedAction === 'publish') {
         Modal.confirm({
           title: '确认发布该问卷？',
-          content: '这将强制发布该问卷。',
+          content: '该问卷已审核通过，发布后将对外可见。',
           okText: '发布',
           cancelText: '取消',
           onOk: async () => {
@@ -264,7 +360,7 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
       if (typedAction === 'unpublish') {
         Modal.confirm({
           title: '确认下架该问卷？',
-          content: '这将强制下架该问卷。',
+          content: '下架后该问卷将不再对外可见。',
           okText: '下架',
           okButtonProps: { danger: true },
           cancelText: '取消',
@@ -410,6 +506,8 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
             ? 'unpublish'
             : 'publish';
           const publishText = row.isPublished ? '下架' : '发布';
+          const disablePublishWhenNotApproved =
+            !row.isPublished && row.auditStatus !== 'Approved';
           const pinnedText = row.pinned ? '取消置顶' : '置顶';
           const featuredText = row.featured ? '取消推荐' : '推荐';
           const disableOperateWhenUnpublished = !row.isPublished;
@@ -427,6 +525,15 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
               </Button>
               <Button
                 type="link"
+                data-action="stat"
+                data-id={row.id}
+                onClick={handleActionClick}
+                disabled={!row.isPublished}
+              >
+                统计
+              </Button>
+              <Button
+                type="link"
                 data-action="export"
                 data-id={row.id}
                 onClick={handleActionClick}
@@ -436,11 +543,39 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
               </Button>
               <Button
                 type="link"
+                data-action="saveAsTemplate"
+                data-id={row.id}
+                onClick={handleActionClick}
+                disabled={row.isTemplate || !row.isPublished}
+              >
+                <Tooltip
+                  title={
+                    row.isTemplate
+                      ? '该问卷已转为模板'
+                      : !row.isPublished
+                        ? '未发布问卷不能转为模板，请先发布'
+                        : null
+                  }
+                >
+                  <span>转为模板</span>
+                </Tooltip>
+              </Button>
+              <Button
+                type="link"
                 data-action={publishAction}
                 data-id={row.id}
                 onClick={handleActionClick}
+                disabled={disablePublishWhenNotApproved}
               >
-                {publishText}
+                <Tooltip
+                  title={
+                    disablePublishWhenNotApproved
+                      ? '仅审核通过的问卷可发布'
+                      : null
+                  }
+                >
+                  <span>{publishText}</span>
+                </Tooltip>
               </Button>
               <Button
                 danger
@@ -709,6 +844,55 @@ const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
               />
             </Form.Item>
           </Form>
+        </Space>
+      </Modal>
+
+      <Modal
+        title="转为模板"
+        open={saveAsTemplateOpen}
+        onCancel={closeSaveAsTemplateModal}
+        onOk={handleSaveAsTemplateOk}
+        okText="创建模板"
+        cancelText="取消"
+        confirmLoading={savingAsTemplate}
+        destroyOnClose
+      >
+        <Space direction="vertical" size={12} className={styles.modalBody}>
+          <div>将当前问卷的结构保存为模板，方便后续快速创建相似问卷。</div>
+          <Form<SaveAsTemplateFormState>
+            form={saveAsTemplateForm}
+            layout="vertical"
+          >
+            <Form.Item
+              name="title"
+              label="模板标题"
+              rules={[
+                { required: true, message: '请输入模板标题' },
+                { max: 100, message: '标题最多100个字符' },
+              ]}
+            >
+              <Input
+                placeholder="请输入模板标题（建议在原标题基础上标注「模板」）"
+                maxLength={100}
+              />
+            </Form.Item>
+            <Form.Item
+              name="templateDesc"
+              label="模板描述"
+              rules={[{ max: 200, message: '描述最多200个字符' }]}
+            >
+              <Input.TextArea
+                placeholder="选填：简要描述该模板的适用场景（将在 C 端模板列表展示）"
+                maxLength={200}
+                showCount
+                autoSize={{ minRows: 3, maxRows: 6 }}
+              />
+            </Form.Item>
+          </Form>
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            💡 提示：创建的模板初始状态为「草稿」，需在模板管理页发布后才会在 C
+            端展示。
+          </div>
         </Space>
       </Modal>
     </Space>

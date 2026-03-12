@@ -139,6 +139,7 @@ export type AdminQuestionListItem = {
    */
   author: string;
   isPublished: boolean;
+  isTemplate?: boolean; // 是否为模板（用于判断"已转为模板"状态）
   auditStatus: AuditStatus;
   pinned: boolean;
   featured: boolean;
@@ -256,6 +257,7 @@ export async function getAdminQuestionListService(
         title,
         author,
         isPublished: Boolean(item.isPublished),
+        isTemplate: Boolean(item.isTemplate),
         auditStatus: isAuditStatus(item.auditStatus)
           ? item.auditStatus
           : 'Draft',

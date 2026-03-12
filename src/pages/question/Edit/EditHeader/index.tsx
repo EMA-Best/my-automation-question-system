@@ -3,6 +3,7 @@ import styles from './index.module.scss';
 import { Button, Space } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { LeftOutlined } from '@ant-design/icons';
+import { routePath } from '../../../../router';
 import EditToolbar from './EditToolbar';
 import EditTitle from './EditTitle';
 import EditSaveButton from './EditSaveButton';
@@ -11,6 +12,7 @@ import EditSubmitReviewButton from './EditSubmitReviewButton';
 import EditExportButton from './EditExportButton';
 import EditImportButton from './EditImportButton';
 import EditAIGenerateButton from './EditAIGenerateButton';
+import EditSaveAsTemplateButton from './EditSaveAsTemplateButton';
 
 const EditHeader: FC = () => {
   const navigate = useNavigate();
@@ -21,7 +23,8 @@ const EditHeader: FC = () => {
           <Space>
             <Button
               type="link"
-              onClick={() => navigate(-1)}
+              // 固定返回管理问卷列表，避免从模板登录中转链路进入时回到中转页
+              onClick={() => navigate(routePath.MANAGE_LIST)}
               icon={<LeftOutlined />}
             >
               返回
@@ -37,6 +40,7 @@ const EditHeader: FC = () => {
             <EditImportButton />
             <EditAIGenerateButton />
             <EditExportButton />
+            <EditSaveAsTemplateButton />
             <EditSaveButton />
             <EditSubmitReviewButton />
             <EditPublishButton />

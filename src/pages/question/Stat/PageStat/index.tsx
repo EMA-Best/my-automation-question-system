@@ -17,6 +17,20 @@ type PropsType = {
 
 type StatRow = Record<string, unknown> & { _id: string };
 
+const NON_ANSWER_COMPONENT_TYPES = new Set([
+  'questionInfo',
+  'questionTitle',
+  'questionParagraph',
+]);
+
+function hasMeaningfulValue(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === 'object') return Object.keys(value).length > 0;
+  return true;
+}
+
 const PageStat: FC<PropsType> = (props) => {
   const {
     selectedComponentId,
@@ -54,6 +68,8 @@ const PageStat: FC<PropsType> = (props) => {
   // 表格需要的列配置
   const columns: ColumnsType<Record<string, unknown>> = componentList
     .filter((c) => !c.isHidden)
+    .filter((c) => !NON_ANSWER_COMPONENT_TYPES.has(c.type))
+    .filter((c) => list.some((row) => hasMeaningfulValue(row[c.fe_id])))
     .map((c) => {
       const { fe_id, title, props = {}, type } = c;
       const colTitle = props.title || title;

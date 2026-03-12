@@ -38,6 +38,35 @@ const SsoBridge: FC = () => {
       }
     };
 
+    // 模式 A：作为 C -> B iframe 回调页，直接转发 query 中的桥接结果
+    // C /api/auth/sso-bridge 命中时会追加 token/username/ssoBridge=ok；未命中时带 ssoBridge=miss。
+    const tokenFromQuery =
+      params.get('token') ??
+      params.get('access_token') ??
+      params.get('accessToken');
+    const usernameFromQuery =
+      params.get('username') ??
+      params.get('userName') ??
+      params.get('name') ??
+      '';
+    const bridgeStatus = params.get('ssoBridge');
+
+    if (tokenFromQuery) {
+      postResult({
+        type: 'B_SSO_BRIDGE_RESULT',
+        status: 'ok',
+        token: tokenFromQuery,
+        username: usernameFromQuery || undefined,
+      });
+      return;
+    }
+
+    if (bridgeStatus === 'miss') {
+      postResult({ type: 'B_SSO_BRIDGE_RESULT', status: 'miss' });
+      return;
+    }
+
+    // 模式 B：作为 C 探测 B 登录态的桥接页，读取 B 本地 token 并返回
     const token = getToken();
     if (!token) {
       // B 未登录：返回 miss，C 可继续展示未登录态

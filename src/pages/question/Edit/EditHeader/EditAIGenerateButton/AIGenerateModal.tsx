@@ -175,6 +175,18 @@ function buildAssistantPreamble(prompt: string) {
   return `当然可以！我将开始为你生成一份关于「${shortTopic}」的问卷整体结构。\n`;
 }
 
+function isQuestionGenerationIntent(prompt: string) {
+  const text = prompt.trim();
+  if (!text) return false;
+  // 生成问卷意图识别（前端）：
+  // - 放宽中间描述长度，避免“生成一份关于xxx的调查问卷”被误判；
+  // - 兼容“调查问卷/问卷/调查表/survey/questionnaire”关键词；
+  // - 规则与后端保持一致，避免前后端行为不一致。
+  return /(?:生成|创建|制作|设计|做(?:一份|个)|帮我(?:出|做)|生成一份).{0,80}?(?:调查问卷|问卷|调查表|survey|questionnaire)|(?:调查问卷|问卷|调查表|survey|questionnaire).{0,30}?(?:生成|创建|制作|设计)/i.test(
+    text
+  );
+}
+
 function finalizeComponentList(params: {
   pageInfo: PageInfoType;
   componentList: ComponentInfoType[];
@@ -500,6 +512,8 @@ const AIGenerateModal: FC<AIGenerateModalProps> = ({ open, onClose }) => {
         return;
       }
 
+      const shouldGenerateQuestion = isQuestionGenerationIntent(trimmed);
+
       setLastPrompt(trimmed);
 
       setIsDone(false);
@@ -521,12 +535,19 @@ const AIGenerateModal: FC<AIGenerateModalProps> = ({ open, onClose }) => {
       try {
         const status = await startStream(
           trimmed,
-          buildAssistantPreamble(trimmed)
+          shouldGenerateQuestion ? buildAssistantPreamble(trimmed) : undefined
         );
         if (status !== 'done') {
           setIsDone(false);
           return;
         }
+
+        if (!shouldGenerateQuestion) {
+          setIsDone(false);
+          message.success('回答完成');
+          return;
+        }
+
         setIsDone(true);
 
         // 如果后端暂未实现流式（或只返回 done），兜底走一次非流式接口

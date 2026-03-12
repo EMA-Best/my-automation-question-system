@@ -22,6 +22,7 @@ import {
   Button,
   Card,
   Col,
+  Drawer,
   Form,
   Input,
   Modal,
@@ -35,8 +36,6 @@ import {
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
-  PlusOutlined,
-  ReloadOutlined,
   EditOutlined,
   SendOutlined,
   StopOutlined,
@@ -44,9 +43,11 @@ import {
   EyeOutlined,
 } from '@ant-design/icons';
 import { useRequest, useTitle } from 'ahooks';
+import { getComponentConfigByType } from '../../../components/QuestionComponents';
+import type { ComponentInfoType } from '../../../store/componentsReducer';
+import { getAdminQuestionDetailService } from '../../../services/admin';
 import {
   getAdminTemplateListService,
-  createAdminTemplateService,
   publishAdminTemplateService,
   unpublishAdminTemplateService,
   deleteAdminTemplateService,
@@ -88,16 +89,6 @@ const defaultQueryState: QueryState = {
   templateStatus: undefined,
 };
 
-// ─── 创建模板表单的类型 ───────────────────────────────────
-
-/** 创建模板弹窗的表单数据 */
-type CreateFormState = {
-  /** 模板标题 */
-  title: string;
-  /** C 端卡片描述 */
-  templateDesc?: string;
-};
-
 // ─── 操作类型（事件委托用） ───────────────────────────────
 
 /** 表格行操作的枚举 */
@@ -134,10 +125,6 @@ const AdminTemplates: FC<AdminTemplatesProps> = (props) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // ── 创建模板弹窗 ─────────────────────────────────────
-  const [createOpen, setCreateOpen] = useState(false);
-  const [createForm] = Form.useForm<CreateFormState>();
-
   // ── 数据请求：获取模板列表 ───────────────────────────
   /**
    * 封装列表请求逻辑
@@ -171,6 +158,50 @@ const AdminTemplates: FC<AdminTemplatesProps> = (props) => {
   /** 总条数 */
   const total = data?.count ?? 0;
 
+  // ── 预览抽屉 ───────────────────────────────────────────
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  const {
+    data: previewData,
+    loading: previewLoading,
+    run: loadPreview,
+  } = useRequest(
+    async (templateId: string) => {
+      const res = await getAdminQuestionDetailService(templateId);
+      return res;
+    },
+    {
+      manual: true,
+      onError: (err) => {
+        message.error(err.message || '加载模板预览失败');
+      },
+    }
+  );
+
+  const openPreview = useCallback(
+    (templateId: string) => {
+      setPreviewOpen(true);
+      loadPreview(templateId);
+    },
+    [loadPreview]
+  );
+
+  const closePreview = useCallback(() => {
+    setPreviewOpen(false);
+  }, []);
+
+  const renderComponent = useCallback((componentInfo: ComponentInfoType) => {
+    const componentConf = getComponentConfigByType(componentInfo.type);
+    if (!componentConf) return null;
+    const { Component } = componentConf;
+    return <Component {...componentInfo.props} />;
+  }, []);
+
+  const previewComponentList = useMemo(() => {
+    const list = previewData?.componentList ?? [];
+    return list.filter((c) => !c.isHidden);
+  }, [previewData]);
+
   // ── 查询表单交互 ─────────────────────────────────────
 
   /** 点击"查询"按钮 */
@@ -195,44 +226,6 @@ const AdminTemplates: FC<AdminTemplatesProps> = (props) => {
     form.setFieldsValue(defaultQueryState);
     setQueryState(defaultQueryState);
   }, [form]);
-
-  /** 点击"刷新" */
-  const onRefresh = useCallback(() => {
-    refresh();
-  }, [refresh]);
-
-  // ── 创建模板弹窗 ─────────────────────────────────────
-
-  /** 打开创建弹窗 */
-  const openCreateModal = useCallback(() => {
-    createForm.resetFields();
-    setCreateOpen(true);
-  }, [createForm]);
-
-  /** 关闭创建弹窗 */
-  const closeCreateModal = useCallback(() => {
-    setCreateOpen(false);
-  }, []);
-
-  /** 提交创建 */
-  const { loading: creating, run: handleCreateOk } = useRequest(
-    async () => {
-      const values = await createForm.validateFields();
-      const res = await createAdminTemplateService({
-        title: values.title,
-        templateDesc: values.templateDesc,
-      });
-      return res;
-    },
-    {
-      manual: true,
-      onSuccess: () => {
-        message.success('模板创建成功');
-        setCreateOpen(false);
-        refresh(); // 刷新列表
-      },
-    }
-  );
 
   // ── 表格行操作（事件委托） ───────────────────────────
   /**
@@ -261,8 +254,7 @@ const AdminTemplates: FC<AdminTemplatesProps> = (props) => {
 
       // ── 预览模板 ──
       if (typedAction === 'preview') {
-        // TODO: 可跳转到模板预览页
-        window.open(`/question/stat/${id}`, '_blank');
+        openPreview(id);
         return;
       }
 
@@ -327,7 +319,7 @@ const AdminTemplates: FC<AdminTemplatesProps> = (props) => {
         });
       }
     },
-    [templateById, refresh]
+    [openPreview, refresh, templateById]
   );
 
   // ── 表格列定义 ───────────────────────────────────────
@@ -451,9 +443,11 @@ const AdminTemplates: FC<AdminTemplatesProps> = (props) => {
   return (
     <div className={styles.page}>
       {/* ── 页面标题 ── */}
-      <Title level={3} className={styles.headerTitle}>
-        {headerTitle}
-      </Title>
+      <Card style={{ marginBottom: 16 }}>
+        <Title level={3} className={styles.headerTitle}>
+          {headerTitle}
+        </Title>
+      </Card>
 
       {/* ── 查询表单 ── */}
       <Card style={{ marginBottom: 16 }}>
@@ -503,75 +497,54 @@ const AdminTemplates: FC<AdminTemplatesProps> = (props) => {
         </Form>
       </Card>
 
-      {/* ── 操作栏 ── */}
-      <Space style={{ marginBottom: 16 }}>
-        {/* 新建模板按钮 */}
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={openCreateModal}
-        >
-          新建模板
-        </Button>
-        {/* 刷新按钮 */}
-        <Button icon={<ReloadOutlined />} onClick={onRefresh}>
-          刷新
-        </Button>
-      </Space>
-
       {/* ── 模板列表表格 ── */}
-      <Table<AdminTemplateListItem>
-        rowKey="id"
-        columns={columns}
-        dataSource={tableDataSource}
-        loading={loading}
-        pagination={{
-          current: page,
-          pageSize,
-          total,
-          showSizeChanger: true,
-          showTotal: (t) => `共 ${t} 条`,
-          onChange: (p, ps) => {
-            setPage(p);
-            setPageSize(ps);
-          },
-        }}
-        scroll={{ x: 800 }}
-      />
+      <Card>
+        <Table<AdminTemplateListItem>
+          rowKey="id"
+          columns={columns}
+          dataSource={tableDataSource}
+          loading={loading}
+          pagination={{
+            current: page,
+            pageSize,
+            total,
+            showSizeChanger: true,
+            showTotal: (t) => `共 ${t} 条`,
+            onChange: (p, ps) => {
+              setPage(p);
+              setPageSize(ps);
+            },
+          }}
+          scroll={{ x: 800 }}
+        />
+      </Card>
 
-      {/* ── 创建模板弹窗 ── */}
-      <Modal
-        title="新建模板"
-        open={createOpen}
-        onOk={handleCreateOk}
-        onCancel={closeCreateModal}
-        confirmLoading={creating}
-        okText="创建"
-        cancelText="取消"
+      <Drawer
+        title="模板预览"
+        open={previewOpen}
+        width={720}
+        onClose={closePreview}
         destroyOnClose
       >
-        <div className={styles.createModalBody}>
-          <Form form={createForm} layout="vertical">
-            {/* 模板标题（必填） */}
-            <Form.Item
-              name="title"
-              label="模板标题"
-              rules={[{ required: true, message: '请输入模板标题' }]}
-            >
-              <Input placeholder="例如：活动报名" maxLength={100} />
-            </Form.Item>
-            {/* 模板描述（选填，用于 C 端卡片展示） */}
-            <Form.Item name="templateDesc" label="模板描述">
-              <Input.TextArea
-                placeholder="C 端卡片展示用描述（选填）"
-                maxLength={200}
-                rows={3}
-                showCount
-              />
-            </Form.Item>
-          </Form>
-        </div>
-      </Modal>
+        <Card
+          loading={previewLoading}
+          bordered={false}
+          className={styles.previewCard}
+        >
+          <div className={styles.previewContent}>
+            {previewComponentList.map((c) => (
+              <div key={c.fe_id} className={styles.previewBlock}>
+                {renderComponent(c)}
+              </div>
+            ))}
+            {!previewLoading && previewComponentList.length === 0 ? (
+              <Typography.Text type="secondary">
+                该模板暂无可预览的组件
+              </Typography.Text>
+            ) : null}
+          </div>
+        </Card>
+      </Drawer>
     </div>
   );
 };

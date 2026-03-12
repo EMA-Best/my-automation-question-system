@@ -2,6 +2,7 @@ import { FC, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './index.module.scss';
 import { Typography, Button, Skeleton } from 'antd';
+import { RocketOutlined, LinkOutlined } from '@ant-design/icons';
 import { useRequest } from 'ahooks';
 import { routePath } from '../../router/index';
 import { getHomeStatService } from '../../services/stat';
@@ -27,6 +28,16 @@ const Home: FC = () => {
   const toManage = useCallback(() => {
     navigate(routePath.MANAGE_LIST);
   }, [navigate]);
+
+  // C 端首页地址：优先读环境变量，未配置时回退本地默认地址
+  const cAppOrigin =
+    process.env.REACT_APP_C_APP_ORIGIN ?? 'http://localhost:3000';
+
+  // 从 B 端首页进入 C 端首页（同窗口跳转，保持用户浏览链路）
+  const toCHome = useCallback(() => {
+    window.location.href = cAppOrigin;
+  }, [cAppOrigin]);
+
   return (
     <div className={styles.container}>
       <div className={styles.info}>
@@ -42,9 +53,19 @@ const Home: FC = () => {
             statsText
           )}
         </Paragraph>
-        <div>
-          <Button type="primary" onClick={toManage}>
+        <div className={styles.actions}>
+          <Button type="primary" icon={<RocketOutlined />} onClick={toManage}>
             开始使用
+          </Button>
+
+          {/* 次级入口：提供跳转到 C 端首页的便捷路径，白色实心样式醒目协调 */}
+          <Button
+            type="default"
+            icon={<LinkOutlined />}
+            onClick={toCHome}
+            className={styles.secondaryBtn}
+          >
+            C端首页
           </Button>
         </div>
       </div>

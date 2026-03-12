@@ -1,14 +1,16 @@
 .header-wrapper {
-  background-color: #fff;
-  border-bottom: 1px solid #e8e8e8;
-  padding: clamp(8px, 1.5vw, 12px) 0;
+  background-color: rgb(255 255 255 / 78%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgb(15 23 42 / 8%);
+  padding: 10px 0;
 }
 
 .header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 0 clamp(12px, 2vw, 24px);
+  gap: 14px;
+  margin: 0 24px;
   min-width: 0;
 
   .left {
@@ -39,9 +41,14 @@
   }
 }
 
+.right :global(.ant-btn) {
+  border-radius: 10px;
+}
+
 @media (max-width: 900px) {
   .header {
     flex-wrap: wrap;
+    margin: 0 12px;
   }
 
   .main {

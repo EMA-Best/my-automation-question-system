@@ -4,6 +4,7 @@ import useGetPageInfo from '../../../hooks/useGetPageInfo';
 import { Button, Result, Spin, Tabs, Typography } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useTitle } from 'ahooks';
+import { routePath } from '../../../router';
 import styles from './index.module.scss';
 import StatHeader from './StatHeader';
 import ComponentList from './ComponentList';
@@ -45,7 +46,12 @@ const Stat: FC = () => {
             status="warning"
             title="该问卷还未发布！"
             extra={[
-              <Button type="primary" key="return" onClick={() => navigate(-1)}>
+              <Button
+                type="primary"
+                key="return"
+                // 固定返回管理问卷列表，避免回到登录中转历史页
+                onClick={() => navigate(routePath.MANAGE_LIST)}
+              >
                 返回
               </Button>,
             ]}
