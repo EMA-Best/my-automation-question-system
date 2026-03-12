@@ -35,7 +35,7 @@ export class AdminTemplateController {
    * 管理员模板列表
    *
    * GET /api/admin/templates
-   * 返回 draft + published，支持关键词/状态/分类筛选与分页
+   * 返回 draft + published，支持关键词/状态筛选与分页
    */
   @Get()
   @RequirePermissions('question:read:any') // 需要问卷读取权限
@@ -44,7 +44,6 @@ export class AdminTemplateController {
     @Query('pageSize') pageSize: string = '10', // 每页数量，默认 10 条
     @Query('keyword') keyword?: string, // 关键词搜索（匹配标题/描述）
     @Query('templateStatus') templateStatus?: string, // 状态筛选：draft / published
-    @Query('category') category?: string, // 分类筛选
   ) {
     // 转换 Query 参数类型并传递给 Service
     return await this.templateService.adminListTemplates({
@@ -52,7 +51,6 @@ export class AdminTemplateController {
       pageSize: parseInt(pageSize, 10) || 10,
       keyword,
       templateStatus,
-      category,
     });
   }
 
@@ -72,7 +70,7 @@ export class AdminTemplateController {
    * 创建空模板
    *
    * POST /api/admin/templates
-   * Body: { title, templateDesc?, desc?, js?, css?, cover?, category?, tags?, sort?, componentList? }
+   * Body: { title, templateDesc?, js?, css?, sort?, componentList? }
    */
   @Post()
   @RequirePermissions('question:update:any') // 需要问卷编辑权限
@@ -107,7 +105,7 @@ export class AdminTemplateController {
    * 更新模板
    *
    * PATCH /api/admin/templates/:id
-   * Body: { title?, templateDesc?, desc?, js?, css?, cover?, category?, tags?, sort?, componentList? }
+   * Body: { title?, templateDesc?, js?, css?, sort?, componentList? }
    */
   @Patch(':id')
   @RequirePermissions('question:update:any')

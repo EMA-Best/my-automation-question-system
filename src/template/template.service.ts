@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
 import { nanoid } from 'nanoid';
+import { Template, type TemplateDocument } from './schemas/template.schema';
 import {
   Question,
   type QuestionDocument,
@@ -28,9 +33,6 @@ export type TemplateListItem = {
   id: string;
   title: string;
   templateDesc: string;
-  cover: string;
-  category: string;
-  tags: string[];
   componentSummary: Array<{ type: string; count: number }>;
   createdAt?: Date;
 };
@@ -45,12 +47,8 @@ export type TemplateDetail = {
   id: string;
   title: string;
   templateDesc: string;
-  desc: string;
   js: string;
   css: string;
-  cover: string;
-  category: string;
-  tags: string[];
   componentList: Question['componentList'];
   questionCount: number;
   createdAt?: Date;
@@ -66,15 +64,10 @@ export type TemplateDetail = {
 type TemplateLeanDoc = {
   _id: mongoose.Types.ObjectId;
   title?: string;
-  desc?: string;
   templateDesc?: string;
   js?: string;
   css?: string;
-  cover?: string;
-  category?: string;
-  tags?: string[];
   sort?: number;
-  isTemplate?: boolean;
   templateStatus?: string;
   componentList?: Question['componentList'];
   createdAt?: Date;
@@ -92,9 +85,6 @@ export type AdminTemplateListItem = {
   id: string;
   title: string;
   templateDesc: string;
-  cover: string;
-  category: string;
-  tags: string[];
   templateStatus: string;
   sort: number;
   questionCount: number;
@@ -107,7 +97,7 @@ export type AdminTemplateListItem = {
  * 模板业务服务
  *
  * 设计思路：
- * - 模板复用 Question 集合，通过 isTemplate=true 区分，避免新建集合
+ * - 模板数据使用独立 Template 集合
  * - 注入 QuestionModel 操作模板数据，注入 AnswerModel 预留统计能力
  *
  * 接口分层：
@@ -118,7 +108,10 @@ export type AdminTemplateListItem = {
 @Injectable()
 export class TemplateService {
   constructor(
-    // 复用 Question 模型（模板和问卷共用同一张表，通过 isTemplate 字段区分）
+    // 独立 Template 模型（模板资产专用集合）
+    @InjectModel(Template.name)
+    private readonly templateModel: Model<TemplateDocument>,
+    // Question 模型只用于“使用模板创建问卷”及“从问卷创建模板”读取源问卷
     @InjectModel(Question.name)
     private readonly questionModel: Model<QuestionDocument>,
     // 答卷模型（预留，后续可用于统计模板生成的问卷收到多少答卷）
@@ -189,15 +182,25 @@ export class TemplateService {
    * @returns 新的 componentList，每个组件的 fe_id 均为新生成的 nanoid
    */
   private cloneComponentList(
-    componentList: Question['componentList'] | undefined,
+    componentList:
+      | Question['componentList']
+      | Array<{
+          fe_id?: string;
+          type: string;
+          title: string;
+          isHidden?: boolean;
+          isLocked?: boolean;
+          props?: Record<string, unknown>;
+        }>
+      | undefined,
   ): Question['componentList'] {
     const list = Array.isArray(componentList) ? componentList : [];
     return list.map((c) => ({
       fe_id: nanoid(),
       type: c.type,
       title: c.title,
-      isHidden: c.isHidden,
-      isLocked: c.isLocked,
+      isHidden: c.isHidden ?? false,
+      isLocked: c.isLocked ?? false,
       props: c.props ?? {},
     }));
   }
@@ -220,8 +223,6 @@ export class TemplateService {
    *
    * 可选筛选：
    * - keyword：模糊匹配标题或模板描述
-   * - category：精确匹配分类
-   * - tag：匹配 tags 数组中包含此标签的记录
    *
    * 返回 componentSummary 而非完整 componentList，减小响应体积
    *
@@ -233,14 +234,12 @@ export class TemplateService {
     page?: number;
     pageSize?: number;
     keyword?: string;
-    category?: string;
-    tag?: string;
   }): Promise<{ list: TemplateListItem[]; count: number }> {
-    const { page = 1, pageSize = 12, keyword, category, tag } = query;
+    const { page = 1, pageSize = 12, keyword } = query;
 
     const filter: Record<string, unknown> = {
-      isTemplate: true, // 只查模板
-      templateStatus: 'published', // 只查已发布的
+      // 独立模板表中只存在模板数据，这里只需要筛选发布状态。
+      templateStatus: 'published',
     };
 
     // 关键词模糊搜索：同时匹配标题和模板描述
@@ -251,25 +250,13 @@ export class TemplateService {
         { templateDesc: { $regex: reg } },
       ];
     }
-    // 精确匹配分类
-    if (category) {
-      filter.category = category;
-    }
-    // MongoDB 数组字段可以直接用单个值匹配，会查找数组中包含该值的文档
-    if (tag) {
-      filter.tags = tag;
-    }
-
     // 并行执行查询 + 计数，性能优于串行
     const [docs, count] = await Promise.all([
-      this.questionModel
+      this.templateModel
         .find(filter)
         .select({
           title: 1, // 模板标题
           templateDesc: 1, // 模板描述（C 端卡片展示用）
-          cover: 1, // 封面图 URL
-          category: 1, // 分类
-          tags: 1, // 标签
           componentList: 1, // 用来生成 componentSummary，不会直接返回给前端
           createdAt: 1, // 创建时间
         })
@@ -277,7 +264,7 @@ export class TemplateService {
         .skip((page - 1) * pageSize)
         .limit(pageSize)
         .lean<TemplateLeanDoc[]>(),
-      this.questionModel.countDocuments(filter), // 总数用于分页
+      this.templateModel.countDocuments(filter), // 总数用于分页
     ]);
 
     // 将 Mongoose lean 文档转换为前端友好的类型
@@ -286,9 +273,6 @@ export class TemplateService {
       id: String(doc._id), // ObjectId 转字符串
       title: doc.title ?? '',
       templateDesc: doc.templateDesc ?? '',
-      cover: doc.cover ?? '',
-      category: doc.category ?? '',
-      tags: doc.tags ?? [],
       componentSummary: this.buildComponentSummary(doc.componentList), // 聚合组件摘要
       createdAt: doc.createdAt,
     }));
@@ -311,21 +295,16 @@ export class TemplateService {
     }
 
     // 查询条件：必须是模板 + 已发布
-    const doc = await this.questionModel
+    const doc = await this.templateModel
       .findOne({
         _id: id,
-        isTemplate: true, // 只查模板
         templateStatus: 'published', // 只查已发布的
       })
       .select({
         title: 1, // 模板标题
         templateDesc: 1, // 模板描述
-        desc: 1, // 问卷描述（克隆时会用到）
         js: 1, // 自定义 JS
         css: 1, // 自定义 CSS
-        cover: 1, // 封面图
-        category: 1, // 分类
-        tags: 1, // 标签
         componentList: 1, // 完整组件列表（用于预览渲染）
         createdAt: 1,
       })
@@ -339,12 +318,8 @@ export class TemplateService {
       id: String(doc._id),
       title: doc.title ?? '',
       templateDesc: doc.templateDesc ?? '',
-      desc: doc.desc ?? '',
       js: doc.js ?? '',
       css: doc.css ?? '',
-      cover: doc.cover ?? '',
-      category: doc.category ?? '',
-      tags: doc.tags ?? [],
       componentList: doc.componentList ?? [],
       questionCount: this.countQuestions(doc.componentList),
       createdAt: doc.createdAt,
@@ -389,9 +364,8 @@ export class TemplateService {
     }
 
     // 查询条件：必须是模板 + 已发布（草稿/下线的模板不允许使用）
-    const template = await this.questionModel.findOne({
+    const template = await this.templateModel.findOne({
       _id: templateId,
-      isTemplate: true,
       templateStatus: 'published',
     });
 
@@ -400,17 +374,16 @@ export class TemplateService {
     }
 
     // 克隆为普通问卷
-    // 注意：这里只复制结构字段（title/desc/js/css/componentList），
+    // 注意：这里只复制结构字段（title/js/css/componentList），
     // 不复制运营字段（featured/pinned）、模板字段（isTemplate/templateStatus）、
     // 审核字段（auditStatus）、统计数据等
     const newQuestion = new this.questionModel({
       title: template.title ?? '未命名问卷',
-      desc: template.desc ?? '',
+      desc: '',
       js: template.js ?? '',
       css: template.css ?? '',
       author: username,
       // ---- 重置为普通问卷默认值 ----
-      isTemplate: false,
       isPublished: false,
       isStar: false,
       isDeleted: false,
@@ -448,25 +421,15 @@ export class TemplateService {
     pageSize?: number;
     keyword?: string;
     templateStatus?: string;
-    category?: string;
   }): Promise<{ list: AdminTemplateListItem[]; count: number }> {
-    const {
-      page = 1,
-      pageSize = 10,
-      keyword,
-      templateStatus,
-      category,
-    } = query;
+    const { page = 1, pageSize = 10, keyword, templateStatus } = query;
 
     const filter: Record<string, unknown> = {
-      isTemplate: true,
+      // 模板集合内天然都是模板，无需 isTemplate 过滤
     };
 
     if (templateStatus && ['draft', 'published'].includes(templateStatus)) {
       filter.templateStatus = templateStatus;
-    }
-    if (category) {
-      filter.category = category;
     }
     if (keyword) {
       const reg = new RegExp(this.escapeRegex(keyword), 'i');
@@ -477,14 +440,11 @@ export class TemplateService {
     }
 
     const [docs, count] = await Promise.all([
-      this.questionModel
+      this.templateModel
         .find(filter)
         .select({
           title: 1,
           templateDesc: 1,
-          cover: 1,
-          category: 1,
-          tags: 1,
           templateStatus: 1,
           sort: 1,
           componentList: 1,
@@ -495,7 +455,7 @@ export class TemplateService {
         .skip((page - 1) * pageSize)
         .limit(pageSize)
         .lean<TemplateLeanDoc[]>(),
-      this.questionModel.countDocuments(filter),
+      this.templateModel.countDocuments(filter),
     ]);
 
     // 批量统计每个模板被"使用"生成问卷的次数（此处简化：暂不统计，返回 0）
@@ -504,9 +464,6 @@ export class TemplateService {
       id: String(doc._id),
       title: doc.title ?? '',
       templateDesc: doc.templateDesc ?? '',
-      cover: doc.cover ?? '',
-      category: doc.category ?? '',
-      tags: doc.tags ?? [],
       templateStatus: doc.templateStatus ?? 'draft',
       sort: doc.sort ?? 0,
       questionCount: this.countQuestions(doc.componentList),
@@ -537,9 +494,7 @@ export class TemplateService {
       throw new NotFoundException('模板不存在');
     }
 
-    const doc = await this.questionModel
-      .findOne({ _id: id, isTemplate: true })
-      .lean<TemplateLeanDoc>();
+    const doc = await this.templateModel.findById(id).lean<TemplateLeanDoc>();
 
     if (!doc) {
       throw new NotFoundException('模板不存在');
@@ -549,12 +504,8 @@ export class TemplateService {
       id: String(doc._id),
       title: doc.title ?? '',
       templateDesc: doc.templateDesc ?? '',
-      desc: doc.desc ?? '',
       js: doc.js ?? '',
       css: doc.css ?? '',
-      cover: doc.cover ?? '',
-      category: doc.category ?? '',
-      tags: doc.tags ?? [],
       templateStatus: doc.templateStatus ?? 'draft',
       sort: doc.sort ?? 0,
       componentList: doc.componentList ?? [],
@@ -581,25 +532,14 @@ export class TemplateService {
     dto: CreateTemplateDto,
     author: string,
   ): Promise<{ id: string }> {
-    const doc = new this.questionModel({
+    const doc = new this.templateModel({
       title: dto.title || '未命名模板',
-      desc: dto.desc ?? '',
       templateDesc: dto.templateDesc ?? '',
       js: dto.js ?? '',
       css: dto.css ?? '',
-      cover: dto.cover ?? '',
-      category: dto.category ?? '',
-      tags: dto.tags ?? [],
       sort: dto.sort ?? 0,
       author,
-      // ---- 模板标识字段 ----
-      isTemplate: true,
       templateStatus: 'draft',
-      // ---- 普通问卷字段设为不生效值 ----
-      isPublished: false,
-      isStar: false,
-      isDeleted: false,
-      auditStatus: 'Draft',
       componentList: dto.componentList
         ? dto.componentList.map((c) => ({
             fe_id: c.fe_id || nanoid(),
@@ -629,7 +569,7 @@ export class TemplateService {
    * 从现有问卷保存为模板
    *
    * 管理员可以将任何现有问卷克隆为模板：
-   * - 复制问卷的结构字段（title/desc/js/css/componentList）
+   * - 复制问卷的结构字段（title/js/css/componentList）
    * - 重置所有运营/审核字段
    * - 重新生成 componentList 中每个组件的 fe_id
    * - 默认 templateStatus='draft'，需要手动发布
@@ -651,29 +591,24 @@ export class TemplateService {
       throw new NotFoundException('问卷不存在');
     }
 
-    const doc = new this.questionModel({
+    if (!question.isPublished) {
+      throw new BadRequestException('未发布问卷不能转为模板，请先发布');
+    }
+
+    const doc = new this.templateModel({
       title: question.title + ' (模板)',
-      desc: question.desc ?? '',
       templateDesc: '',
       js: question.js ?? '',
       css: question.css ?? '',
       author,
-      // ---- 模板标识 ----
-      isTemplate: true,
       templateStatus: 'draft',
-      // ---- 重置字段 ----
-      isPublished: false,
-      isStar: false,
-      isDeleted: false,
-      auditStatus: 'Draft',
-      featured: false,
-      pinned: false,
-      pinnedAt: null,
+      sourceQuestionId: String(question._id),
       // ---- 重新生成 fe_id ----
       componentList: this.cloneComponentList(question.componentList),
     });
 
     const saved = await doc.save();
+
     return { id: String(saved._id) };
   }
 
@@ -704,12 +639,8 @@ export class TemplateService {
     if (dto.title !== undefined) updatePayload.title = dto.title;
     if (dto.templateDesc !== undefined)
       updatePayload.templateDesc = dto.templateDesc;
-    if (dto.desc !== undefined) updatePayload.desc = dto.desc;
     if (dto.js !== undefined) updatePayload.js = dto.js;
     if (dto.css !== undefined) updatePayload.css = dto.css;
-    if (dto.cover !== undefined) updatePayload.cover = dto.cover;
-    if (dto.category !== undefined) updatePayload.category = dto.category;
-    if (dto.tags !== undefined) updatePayload.tags = dto.tags;
     if (dto.sort !== undefined) updatePayload.sort = dto.sort;
 
     if (dto.componentList !== undefined) {
@@ -723,8 +654,8 @@ export class TemplateService {
       }));
     }
 
-    const result = await this.questionModel.updateOne(
-      { _id: id, isTemplate: true },
+    const result = await this.templateModel.updateOne(
+      { _id: id },
       updatePayload,
     );
 
@@ -748,8 +679,8 @@ export class TemplateService {
       throw new NotFoundException('模板不存在');
     }
 
-    const result = await this.questionModel.updateOne(
-      { _id: id, isTemplate: true },
+    const result = await this.templateModel.updateOne(
+      { _id: id },
       { templateStatus: 'published' },
     );
 
@@ -773,8 +704,8 @@ export class TemplateService {
       throw new NotFoundException('模板不存在');
     }
 
-    const result = await this.questionModel.updateOne(
-      { _id: id, isTemplate: true },
+    const result = await this.templateModel.updateOne(
+      { _id: id },
       { templateStatus: 'draft' },
     );
 
@@ -800,10 +731,7 @@ export class TemplateService {
       throw new NotFoundException('模板不存在');
     }
 
-    const result = await this.questionModel.deleteOne({
-      _id: id,
-      isTemplate: true,
-    });
+    const result = await this.templateModel.deleteOne({ _id: id });
 
     if (result.deletedCount === 0) {
       throw new NotFoundException('模板不存在');

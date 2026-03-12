@@ -51,28 +51,11 @@ export class UpdateTemplateDto {
 
   @IsOptional()
   @IsString()
-  desc?: string; // 问卷描述
-
-  @IsOptional()
-  @IsString()
   js?: string; // 自定义 JavaScript
 
   @IsOptional()
   @IsString()
   css?: string; // 自定义 CSS
-
-  @IsOptional()
-  @IsString()
-  cover?: string; // 封面图 URL
-
-  @IsOptional()
-  @IsString()
-  category?: string; // 模板分类
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  tags?: string[]; // 模板标签
 
   @IsOptional()
   @IsNumber()

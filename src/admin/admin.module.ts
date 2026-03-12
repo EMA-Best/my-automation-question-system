@@ -11,6 +11,7 @@ import { Question, QuestionSchema } from '../question/schemas/question.schema';
 import { ReviewModule } from '../review/review.module';
 import { User, UserSchema } from '../user/schemas/user.schema';
 import { Answer, AnswerSchema } from '../answer/schemas/answer.schema';
+import { Template, TemplateSchema } from '../template/schemas/template.schema';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { Answer, AnswerSchema } from '../answer/schemas/answer.schema';
       { name: Question.name, schema: QuestionSchema },
       { name: User.name, schema: UserSchema },
       { name: Answer.name, schema: AnswerSchema },
+      { name: Template.name, schema: TemplateSchema },
     ]),
     ReviewModule,
   ],

@@ -9,6 +9,10 @@ import {
   Question,
   type QuestionDocument,
 } from '../question/schemas/question.schema';
+import {
+  Template,
+  type TemplateDocument,
+} from '../template/schemas/template.schema';
 import { User, type UserDocument } from '../user/schemas/user.schema';
 import { Answer, type AnswerDocument } from '../answer/schemas/answer.schema';
 import {
@@ -22,6 +26,7 @@ export type AdminQuestionListItem = {
   author: string;
   isPublished: boolean;
   isDeleted: boolean;
+  isTemplate?: boolean; // 是否为模板（用于前端判断"已转为模板"状态）
   auditStatus: string;
   auditReason?: string;
   auditUpdatedAt?: Date | null;
@@ -67,6 +72,8 @@ export class AdminQuestionService {
     private readonly userModel: Model<UserDocument>,
     @InjectModel(Answer.name)
     private readonly answerModel: Model<AnswerDocument>,
+    @InjectModel(Template.name)
+    private readonly templateModel: Model<TemplateDocument>,
     @InjectModel(QuestionReview.name)
     private readonly questionReviewModel: Model<QuestionReviewDocument>,
   ) {}
@@ -95,7 +102,6 @@ export class AdminQuestionService {
 
     const baseMatch: Record<string, unknown> = {
       isDeleted: true,
-      isTemplate: { $ne: true }, // 排除模板，模板不走回收站逻辑
     };
 
     if (query.deletedAtStart || query.deletedAtEnd) {
@@ -271,6 +277,7 @@ export class AdminQuestionService {
     pageSize?: number;
     keyword?: string;
     author?: string;
+    ownerKeyword?: string;
     isPublished?: string;
     isDeleted?: string;
     auditStatus?: string;
@@ -282,18 +289,12 @@ export class AdminQuestionService {
     const page = query.page && query.page > 0 ? query.page : 1;
     const pageSize = query.pageSize && query.pageSize > 0 ? query.pageSize : 10;
 
-    const baseMatch: Record<string, unknown> = {
-      isTemplate: { $ne: true }, // 排除模板，模板通过专门的模板管理接口查看
-    };
+    const baseMatch: Record<string, unknown> = {};
 
     // 默认只返回未删除数据；回收站页可显式传 isDeleted=true
     if (query.isDeleted === 'true') baseMatch.isDeleted = true;
     else if (query.isDeleted === 'false') baseMatch.isDeleted = false;
     else baseMatch.isDeleted = false;
-
-    if (typeof query.author === 'string' && query.author.trim()) {
-      baseMatch.author = query.author.trim();
-    }
 
     if (query.isPublished === 'true') baseMatch.isPublished = true;
     if (query.isPublished === 'false') baseMatch.isPublished = false;
@@ -332,6 +333,16 @@ export class AdminQuestionService {
       ? new RegExp(keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
       : null;
 
+    const rawAuthorKeyword =
+      typeof query.author === 'string' && query.author.trim()
+        ? query.author.trim()
+        : typeof query.ownerKeyword === 'string' && query.ownerKeyword.trim()
+          ? query.ownerKeyword.trim()
+          : '';
+    const authorRegex = rawAuthorKeyword
+      ? new RegExp(rawAuthorKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+      : null;
+
     const pipeline: mongoose.PipelineStage[] = [
       { $match: baseMatch },
       {
@@ -356,6 +367,34 @@ export class AdminQuestionService {
         },
       },
       { $unwind: { path: '$owner', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'templates',
+          let: { qid: { $toString: '$_id' } },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$sourceQuestionId', '$$qid'] },
+              },
+            },
+            { $project: { _id: 1 } },
+            { $limit: 1 },
+          ],
+          as: 'linkedTemplates',
+        },
+      },
+      {
+        $addFields: {
+          isTemplate: {
+            $gt: [{ $size: '$linkedTemplates' }, 0],
+          },
+        },
+      },
+      {
+        $project: {
+          linkedTemplates: 0,
+        },
+      },
     ];
 
     if (regex) {
@@ -369,6 +408,18 @@ export class AdminQuestionService {
         or.push({ _id: new mongoose.Types.ObjectId(keyword) });
       }
       pipeline.push({ $match: { $or: or } });
+    }
+
+    if (authorRegex) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { author: authorRegex },
+            { 'owner.username': authorRegex },
+            { 'owner.nickname': authorRegex },
+          ],
+        },
+      });
     }
 
     pipeline.push({
@@ -391,6 +442,7 @@ export class AdminQuestionService {
               author: 1,
               isPublished: 1,
               isDeleted: 1,
+              isTemplate: 1, // 返回isTemplate字段，用于前端判断"已转为模板"状态
               auditStatus: 1,
               auditReason: 1,
               auditUpdatedAt: 1,
@@ -564,14 +616,11 @@ export class AdminQuestionService {
       throw new BadRequestException('问卷已删除，无法发布');
     }
 
-    question.isPublished = true;
-
-    // 管理员强制发布：若未通过审核，则自动置为 Approved（避免前端展示冲突）
     if (question.auditStatus !== 'Approved') {
-      question.auditStatus = 'Approved';
-      question.auditReason = '';
-      question.auditUpdatedAt = new Date();
+      throw new BadRequestException('问卷未审核通过，无法发布');
     }
+
+    question.isPublished = true;
 
     await question.save();
 

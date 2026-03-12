@@ -27,7 +27,7 @@ export class TemplateController {
    * 获取公开模板列表
    *
    * GET /api/templates
-   * Query: page, pageSize, keyword, category, tag
+   * Query: page, pageSize, keyword
    *
    * @Public() 跳过登录校验
    */
@@ -37,16 +37,12 @@ export class TemplateController {
     @Query('page') page: string = '1', // 页码，默认第 1 页
     @Query('pageSize') pageSize: string = '12', // 每页数量，默认 12 条
     @Query('keyword') keyword?: string, // 关键词搜索（匹配标题/描述）
-    @Query('category') category?: string, // 分类筛选
-    @Query('tag') tag?: string, // 标签筛选
   ) {
     // Query 参数为 string 类型，需转换为 number 并提供默认值
     return await this.templateService.getPublicTemplateList({
       page: parseInt(page, 10) || 1,
       pageSize: parseInt(pageSize, 10) || 12,
       keyword,
-      category,
-      tag,
     });
   }
 

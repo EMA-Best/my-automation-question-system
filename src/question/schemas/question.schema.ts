@@ -79,34 +79,6 @@ export class Question {
   @Prop({ type: Date, default: null })
   pinnedAt?: Date | null;
 
-  // -----------------------------
-  // 模板相关字段
-  // -----------------------------
-  @Prop({ default: false, index: true })
-  isTemplate?: boolean; // true=模板，false=普通问卷
-
-  @Prop({
-    type: String,
-    enum: ['draft', 'published'],
-    default: 'draft',
-  })
-  templateStatus?: 'draft' | 'published'; // 模板发布状态
-
-  @Prop({ default: '' })
-  templateDesc?: string; // C 端展示的模板描述
-
-  @Prop({ default: '' })
-  cover?: string; // 模板封面图 URL
-
-  @Prop({ default: '' })
-  category?: string; // 模板分类
-
-  @Prop({ type: [String], default: [] })
-  tags?: string[]; // 模板标签
-
-  @Prop({ type: Number, default: 0 })
-  sort?: number; // 排序权重（越大越靠前）
-
   @Prop()
   componentList: {
     fe_id: string; // 前端组件唯一标识 需要前端控制 由前端生成
@@ -129,6 +101,3 @@ QuestionSchema.index({ deletedBy: 1, deletedAt: -1 });
 
 // 审核队列索引
 QuestionSchema.index({ auditStatus: 1, auditUpdatedAt: -1 });
-
-// 模板列表索引（公开查询 + 管理端查询）
-QuestionSchema.index({ isTemplate: 1, templateStatus: 1, sort: -1, _id: -1 });

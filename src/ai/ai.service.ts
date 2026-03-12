@@ -122,6 +122,14 @@ const MAX_TITLE_LEN = 80;
 const MAX_DESC_LEN = 300;
 const MAX_TEXT_DELTA_LEN = 2000;
 
+const NICKNAME_PATTERN = /昵称|nickname|nick\s*name/i;
+// 生成问卷意图识别（后端兜底）：
+// 1) 覆盖“请帮我生成一份关于xxx的调查问卷”这类中间描述较长的自然语言；
+// 2) 同时兼容“问卷 + 生成”倒装表达；
+// 3) 包含“调查问卷 / 问卷 / 调查表 / survey / questionnaire”等常见关键词。
+const GENERATE_QUESTION_INTENT_PATTERN =
+  /(?:生成|创建|制作|设计|做(?:一份|个)|帮我(?:出|做)|生成一份).{0,80}?(?:调查问卷|问卷|调查表|survey|questionnaire)|(?:调查问卷|问卷|调查表|survey|questionnaire).{0,30}?(?:生成|创建|制作|设计)/i;
+
 @Injectable()
 /**
  * AI服务类
@@ -178,8 +186,10 @@ export class AIService {
       throw new BadRequestException('prompt 长度不能超过2000字符');
     }
 
-    const systemPrompt =
-      '你是一个专业的问卷生成助手。你的输出必须严格符合 JSON Lines（JSONL）协议，每一行都是 JSON。';
+    const shouldGenerateQuestion = this.isQuestionGenerationIntent(prompt);
+    const systemPrompt = shouldGenerateQuestion
+      ? '你是一个专业的问卷生成助手。你的输出必须严格符合 JSON Lines（JSONL）协议，每一行都是 JSON。'
+      : '你是一个专业中文助手。请直接、自然地回答用户问题，不要生成问卷结构。';
 
     // meta 事件（后端本地生成）：方便前端/日志定位一次请求
     handlers.onEvent('meta', {
@@ -196,7 +206,9 @@ export class AIService {
           { role: 'system', content: systemPrompt },
           {
             role: 'user',
-            content: buildQuestionGenerationStreamPrompt(prompt),
+            content: shouldGenerateQuestion
+              ? buildQuestionGenerationStreamPrompt(prompt)
+              : prompt,
           },
         ],
         temperature: this.config.temperature,
@@ -211,6 +223,16 @@ export class AIService {
       let jsonlBuffer = '';
       let componentCount = 0;
       let doneEmitted = false;
+      let hasNicknameInput = false;
+
+      const emitNicknameComponentIfMissing = () => {
+        if (!shouldGenerateQuestion) return;
+        if (hasNicknameInput || componentCount >= MAX_COMPONENTS) return;
+        const nicknameComponent = this.createNicknameInputComponent();
+        handlers.onEvent('component', nicknameComponent);
+        componentCount += 1;
+        hasNicknameInput = true;
+      };
 
       /**
        * 统一的事件出口：在这里做限流/裁剪/计数。
@@ -232,14 +254,19 @@ export class AIService {
         }
 
         if (event.type === 'component') {
+          if (!shouldGenerateQuestion) return;
           if (componentCount >= MAX_COMPONENTS) return;
           componentCount += 1;
+          if (this.isNicknameInputComponent(event.data)) {
+            hasNicknameInput = true;
+          }
           handlers.onEvent('component', event.data);
           return;
         }
 
         if (event.type === 'done') {
           if (doneEmitted) return;
+          emitNicknameComponentIfMissing();
           doneEmitted = true;
           handlers.onEvent('done', { ok: true });
           return;
@@ -365,6 +392,14 @@ export class AIService {
             const delta = parsedChunk?.choices?.[0]?.delta?.content;
             if (typeof delta !== 'string' || delta.length === 0) continue;
 
+            if (!shouldGenerateQuestion) {
+              emitParsedEvent({
+                type: 'assistant_delta',
+                data: { textDelta: delta },
+              });
+              continue;
+            }
+
             // 解析 JSON Lines 事件
             tryParseJsonlLines(delta);
           }
@@ -383,6 +418,7 @@ export class AIService {
       });
 
       if (!doneEmitted && !signal?.aborted) {
+        emitNicknameComponentIfMissing();
         handlers.onEvent('done', { ok: true });
       }
     } catch (error) {
@@ -445,6 +481,12 @@ export class AIService {
     };
   }
 
+  private isQuestionGenerationIntent(prompt: string): boolean {
+    const text = typeof prompt === 'string' ? prompt.trim() : '';
+    if (!text) return false;
+    return GENERATE_QUESTION_INTENT_PATTERN.test(text);
+  }
+
   private sanitizeComponent(
     input: unknown,
   ): AIGenerateQuestionResponse['componentList'][number] | null {
@@ -494,6 +536,48 @@ export class AIService {
       isLocked,
       props,
     };
+  }
+
+  private isNicknameInputComponent(
+    component: AIGenerateQuestionResponse['componentList'][number],
+  ): boolean {
+    if (component.type !== 'questionInput') return false;
+    const title = typeof component.title === 'string' ? component.title : '';
+    const placeholder =
+      typeof component.props?.placeholder === 'string'
+        ? component.props.placeholder
+        : '';
+    return NICKNAME_PATTERN.test(`${title} ${placeholder}`);
+  }
+
+  private createNicknameInputComponent(): AIGenerateQuestionResponse['componentList'][number] {
+    return {
+      fe_id: nanoid(),
+      type: 'questionInput',
+      title: '请输入你的昵称',
+      isHidden: false,
+      isLocked: false,
+      props: {
+        placeholder: '请输入你的昵称',
+      },
+    };
+  }
+
+  private ensureNicknameInputComponent(
+    componentList: AIGenerateQuestionResponse['componentList'],
+  ): AIGenerateQuestionResponse['componentList'] {
+    if (
+      componentList.some((component) =>
+        this.isNicknameInputComponent(component),
+      )
+    ) {
+      return componentList;
+    }
+
+    return [this.createNicknameInputComponent(), ...componentList].slice(
+      0,
+      MAX_COMPONENTS,
+    );
   }
 
   /**
@@ -640,9 +724,11 @@ export class AIService {
       throw new BadRequestException('AI 返回的问卷至少需要包含一个组件');
     }
 
+    const finalComponentList = this.ensureNicknameInputComponent(componentList);
+
     return {
       pageInfo,
-      componentList,
+      componentList: finalComponentList,
     };
   }
 }

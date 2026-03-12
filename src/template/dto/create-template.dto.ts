@@ -51,28 +51,11 @@ export class CreateTemplateDto {
 
   @IsOptional()
   @IsString()
-  desc?: string; // 问卷描述（克隆时会带到新问卷）
-
-  @IsOptional()
-  @IsString()
   js?: string; // 自定义 JavaScript
 
   @IsOptional()
   @IsString()
   css?: string; // 自定义 CSS
-
-  @IsOptional()
-  @IsString()
-  cover?: string; // 模板封面图 URL
-
-  @IsOptional()
-  @IsString()
-  category?: string; // 模板分类（如 “报名”“调查”“反馈” 等）
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  tags?: string[]; // 模板标签（用于筛选）
 
   @IsOptional()
   @IsNumber()

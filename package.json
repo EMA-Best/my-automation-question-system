@@ -19,7 +19,12 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed:admin": "ts-node -T scripts/seed-admin.ts",
-    "migrate:ai-env": "ts-node -T scripts/migrate-ai-env.ts"
+    "migrate:ai-env": "ts-node -T scripts/migrate-ai-env.ts",
+    "backfill:template-desc": "ts-node -T scripts/backfill-template-desc.ts",
+    "migrate:templates": "ts-node -T scripts/migrate-templates-to-collection.ts",
+    "cleanup:legacy-templates": "ts-node -T scripts/cleanup-legacy-question-templates.ts",
+    "cleanup:template-removed-fields": "ts-node -T scripts/cleanup-template-removed-fields.ts",
+    "cleanup:question-template-fields": "ts-node -T scripts/cleanup-question-template-fields.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
