@@ -1,0 +1,74 @@
+import { FC } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
+import useGetComponentInfo from '../../../../../hooks/useGetComponentInfo';
+import { useKeyPress, useRequest, useDebounceEffect } from 'ahooks';
+import { updateQuestionService } from '../../../../../services/question';
+import { updateAdminTemplateService } from '../../../../../services/template';
+import { Button } from 'antd';
+import { LoadingOutlined } from '@ant-design/icons';
+import useGetPageInfo from '../../../../../hooks/useGetPageInfo';
+
+const EditSaveButton: FC = () => {
+  // 获取路由参数中的问卷id
+  const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const isTemplateMode = searchParams.get('mode') === 'template';
+  const { componentList = [] } = useGetComponentInfo();
+  const pageInfo = useGetPageInfo();
+
+  // ajax 保存问卷
+  const { loading, run: save } = useRequest(
+    async () => {
+      if (!id) return;
+      // 审核字段由后端维护，避免被前端误传覆盖
+      const {
+        auditStatus: _auditStatus,
+        auditReason: _auditReason,
+        ...rest
+      } = pageInfo;
+      void _auditStatus;
+      void _auditReason;
+      if (isTemplateMode) {
+        const { title = '', desc = '', js = '', css = '' } = rest;
+        await updateAdminTemplateService(id, {
+          title,
+          desc,
+          js,
+          css,
+          componentList,
+        });
+      } else {
+        await updateQuestionService(id, { ...rest, componentList });
+      }
+    },
+    { manual: true }
+  );
+
+  // 快捷键保存
+  useKeyPress(['ctrl.s', 'meta.s'], (e: KeyboardEvent) => {
+    // 防止默认事件（浏览器默认保存事件）
+    e.preventDefault();
+    if (!loading) save();
+  });
+
+  // 自动保存(防抖)
+  useDebounceEffect(
+    () => {
+      save();
+    },
+    [componentList, pageInfo],
+    { wait: 1000 }
+  );
+
+  return (
+    <Button
+      onClick={save}
+      disabled={loading}
+      icon={loading ? <LoadingOutlined /> : null}
+    >
+      保存
+    </Button>
+  );
+};
+
+export default EditSaveButton;

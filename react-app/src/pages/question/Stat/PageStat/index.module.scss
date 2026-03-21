@@ -1,0 +1,40 @@
+.wrap {
+  padding: 14px 16px;
+  min-height: 0;
+}
+
+.headerRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.subTitle {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+}
+
+.tableWrap {
+  border: 1px solid rgba(5, 5, 5, 0.06);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.paginationWrap {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 4px;
+}
+
+.rowOdd td {
+  background: rgba(0, 0, 0, 0.012);
+}

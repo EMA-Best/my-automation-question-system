@@ -1,0 +1,48 @@
+.container {
+  height: calc(100vh - 64px - 65px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+
+  .info {
+    text-align: center;
+
+    .actions {
+      margin-top: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .actions button {
+      height: 60px;
+      font-size: 24px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .actions :global(.ant-btn-primary):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .secondaryBtn {
+      background: white !important;
+      color: #1677ff !important;
+      border: none !important;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.95) !important;
+        color: #0958d9 !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+    }
+  }
+}

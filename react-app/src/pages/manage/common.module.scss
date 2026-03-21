@@ -1,0 +1,42 @@
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  min-width: 0;
+
+  .left {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .right {
+    flex: 1 1 auto;
+    text-align: right;
+    min-width: 220px;
+  }
+}
+
+.content {
+  margin-bottom: 20px;
+}
+
+.footer {
+  text-align: center;
+}
+
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 600px) {
+  .header {
+    margin-bottom: 12px;
+  }
+
+  .right {
+    text-align: left;
+    min-width: 0;
+  }
+}

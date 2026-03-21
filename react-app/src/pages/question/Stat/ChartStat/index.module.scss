@@ -1,0 +1,57 @@
+.wrap {
+  height: 100%;
+  min-height: 100%;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.header {
+  flex: 0 0 auto;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(5, 5, 5, 0.06);
+}
+
+.title {
+  margin: 0;
+}
+
+.subTitle {
+  display: block;
+  margin-top: 4px;
+  line-height: 20px;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.chartScroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+}
+
+/*
+  关键：当图表自身高度小于容器时，让它垂直/水平居中。
+  当图表高度大于容器时，scroll 生效，仍然从顶部开始滚动。
+*/
+.chartInner {
+  flex: 1;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.loadingWrap {
+  padding: 24px 0;
+  width: 100%;
+  text-align: center;
+}

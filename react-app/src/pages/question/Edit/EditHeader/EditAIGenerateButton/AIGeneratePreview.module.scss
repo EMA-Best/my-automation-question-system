@@ -1,0 +1,10 @@
+.componentList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.componentItem {
+  padding: 8px;
+  border-radius: 8px;
+}

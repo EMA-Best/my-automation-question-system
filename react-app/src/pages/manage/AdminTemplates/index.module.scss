@@ -1,0 +1,50 @@
+.page {
+  width: 100%;
+}
+
+.headerTitle {
+  margin: 0;
+}
+
+.queryForm {
+  width: 100%;
+
+  :global(.ant-form-item) {
+    margin-bottom: 0;
+  }
+}
+
+.field {
+  width: 100%;
+}
+
+.actionCol {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.createModalBody {
+  width: 100%;
+}
+
+.previewCard {
+  :global {
+    .ant-card-body {
+      padding: 24px;
+    }
+  }
+}
+
+.previewContent {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.previewBlock {
+  padding: 4px 0;
+}
