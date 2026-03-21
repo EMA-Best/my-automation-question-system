@@ -68,6 +68,7 @@ type TemplateLeanDoc = {
   js?: string;
   css?: string;
   sort?: number;
+  useCount?: number;
   templateStatus?: string;
   componentList?: Question['componentList'];
   createdAt?: Date;
@@ -398,6 +399,13 @@ export class TemplateService {
     });
 
     const saved = await newQuestion.save();
+
+    // 仅在问卷创建成功后统计一次模板使用次数
+    await this.templateModel.updateOne(
+      { _id: template._id },
+      { $inc: { useCount: 1 } },
+    );
+
     return { questionId: String(saved._id) };
   }
 
@@ -447,6 +455,7 @@ export class TemplateService {
           templateDesc: 1,
           templateStatus: 1,
           sort: 1,
+          useCount: 1,
           componentList: 1,
           createdAt: 1,
           updatedAt: 1,
@@ -458,8 +467,6 @@ export class TemplateService {
       this.templateModel.countDocuments(filter),
     ]);
 
-    // 批量统计每个模板被"使用"生成问卷的次数（此处简化：暂不统计，返回 0）
-    // 若需要准确的 useCount，可增加专门的计数字段或关联表
     const list: AdminTemplateListItem[] = docs.map((doc) => ({
       id: String(doc._id),
       title: doc.title ?? '',
@@ -467,7 +474,7 @@ export class TemplateService {
       templateStatus: doc.templateStatus ?? 'draft',
       sort: doc.sort ?? 0,
       questionCount: this.countQuestions(doc.componentList),
-      useCount: 0,
+      useCount: doc.useCount ?? 0,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
     }));

@@ -130,7 +130,7 @@ export class AIConfigService {
     const maxTokens = maxTokensStr ? parseInt(maxTokensStr, 10) : 2000;
 
     const timeoutStr = this.configService.get<string>('AI_TIMEOUT_MS');
-    const timeoutMs = timeoutStr ? parseInt(timeoutStr, 10) : 60000;
+    const timeoutMs = timeoutStr ? parseInt(timeoutStr, 10) : 120000;
 
     if (!apiKey) {
       throw new Error('AI_API_KEY 环境变量未设置，请在 .env 文件中配置');

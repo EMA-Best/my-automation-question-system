@@ -348,6 +348,11 @@ var TemplateService = /** @class */ (function () {
                         return [4 /*yield*/, newQuestion.save()];
                     case 2:
                         saved = _d.sent();
+                        // 仅在问卷创建成功后统计一次模板使用次数
+                        return [4 /*yield*/, this.templateModel.updateOne({ _id: template._id }, { $inc: { useCount: 1 } })];
+                    case 3:
+                        // 仅在问卷创建成功后统计一次模板使用次数
+                        _d.sent();
                         return [2 /*return*/, { questionId: String(saved._id) }];
                 }
             });
@@ -396,6 +401,7 @@ var TemplateService = /** @class */ (function () {
                                     templateDesc: 1,
                                     templateStatus: 1,
                                     sort: 1,
+                                    useCount: 1,
                                     componentList: 1,
                                     createdAt: 1,
                                     updatedAt: 1
@@ -409,7 +415,7 @@ var TemplateService = /** @class */ (function () {
                     case 1:
                         _c = _d.sent(), docs = _c[0], count = _c[1];
                         list = docs.map(function (doc) {
-                            var _a, _b, _c, _d;
+                            var _a, _b, _c, _d, _e;
                             return ({
                                 id: String(doc._id),
                                 title: (_a = doc.title) !== null && _a !== void 0 ? _a : '',
@@ -417,7 +423,7 @@ var TemplateService = /** @class */ (function () {
                                 templateStatus: (_c = doc.templateStatus) !== null && _c !== void 0 ? _c : 'draft',
                                 sort: (_d = doc.sort) !== null && _d !== void 0 ? _d : 0,
                                 questionCount: _this.countQuestions(doc.componentList),
-                                useCount: 0,
+                                useCount: (_e = doc.useCount) !== null && _e !== void 0 ? _e : 0,
                                 createdAt: doc.createdAt,
                                 updatedAt: doc.updatedAt
                             });

@@ -75,3 +75,9 @@ export const TemplateSchema = SchemaFactory.createForClass(Template);
 
 // 管理端模板列表常用索引
 TemplateSchema.index({ templateStatus: 1, sort: -1, _id: -1 });
+
+// 管理端模板列表常见排序：sort -> updatedAt -> _id
+TemplateSchema.index({ templateStatus: 1, sort: -1, updatedAt: -1, _id: -1 });
+
+// 不按状态筛选时仍可复用排序索引
+TemplateSchema.index({ sort: -1, updatedAt: -1, _id: -1 });

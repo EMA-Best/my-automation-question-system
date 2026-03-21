@@ -731,4 +731,81 @@ export class AIService {
       componentList: finalComponentList,
     };
   }
+
+  /**
+   * 通用 AI 内容生成方法
+   * @param params - 生成参数
+   * @returns AI 生成的内容
+   */
+  async generateContent(params: {
+    model: string;
+    messages: Array<{
+      role: 'system' | 'user' | 'assistant';
+      content: string;
+    }>;
+    max_tokens: number;
+    temperature: number;
+  }) {
+    try {
+      console.log('开始调用 AI 服务:', {
+        model: params.model,
+        messages: params.messages.length,
+        max_tokens: params.max_tokens,
+        temperature: params.temperature,
+      });
+
+      const responseData = await this.provider.createChatCompletion({
+        model: params.model,
+        messages: params.messages,
+        temperature: params.temperature,
+        maxTokens: params.max_tokens,
+      });
+
+      console.log('AI 服务调用成功:', responseData);
+
+      if (!responseData?.choices?.[0]?.message?.content) {
+        throw new BadRequestException('AI 返回内容为空');
+      }
+
+      return responseData;
+    } catch (error) {
+      console.error('AI 服务调用失败:', error);
+
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError<OpenAICompatibleApiError>;
+        const statusCode = axiosError.response?.status;
+        const errorData = axiosError.response?.data;
+        const errorMessage =
+          (errorData?.error?.message &&
+          typeof errorData.error.message === 'string'
+            ? errorData.error.message
+            : null) || axiosError.message;
+
+        console.error('AI API 错误详情:', {
+          statusCode,
+          errorData,
+          errorMessage,
+        });
+
+        const message =
+          statusCode === 401
+            ? 'AI API 密钥无效，请检查配置'
+            : statusCode === 429
+              ? 'AI API 请求频率过高，请稍后重试'
+              : statusCode === 500
+                ? 'AI 服务暂时不可用，请稍后重试'
+                : `AI 服务调用失败: ${typeof errorMessage === 'string' ? errorMessage : '未知错误'}`;
+
+        throw new BadRequestException(message);
+      }
+
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new BadRequestException(
+        `AI 生成失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      );
+    }
+  }
 }

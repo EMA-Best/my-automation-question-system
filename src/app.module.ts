@@ -10,6 +10,7 @@ import { AnswerModule } from './answer/answer.module';
 import { StatModule } from './stat/stat.module';
 import { AdminModule } from './admin/admin.module';
 import { TemplateModule } from './template/template.module';
+import { StatReportModule } from './stat-report/stat-report.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { TemplateModule } from './template/template.module';
     StatModule,
     AdminModule,
     TemplateModule,
+    StatReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

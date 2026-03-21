@@ -92,3 +92,27 @@ exports.QuestionSchema.index({ isDeleted: 1, deletedAt: -1, _id: -1 });
 exports.QuestionSchema.index({ deletedBy: 1, deletedAt: -1 });
 // 审核队列索引
 exports.QuestionSchema.index({ auditStatus: 1, auditUpdatedAt: -1 });
+// 公开列表（热门/推荐）常用：isDeleted + isPublished + pinned/featured 组合排序
+exports.QuestionSchema.index({
+    isDeleted: 1,
+    isPublished: 1,
+    pinned: -1,
+    pinnedAt: -1,
+    updatedAt: -1,
+    _id: -1
+});
+exports.QuestionSchema.index({
+    isDeleted: 1,
+    isPublished: 1,
+    featured: -1,
+    updatedAt: -1,
+    _id: -1
+});
+// 管理端问卷列表常用：默认未删除 + 运营排序
+exports.QuestionSchema.index({
+    isDeleted: 1,
+    pinned: -1,
+    pinnedAt: -1,
+    updatedAt: -1,
+    _id: -1
+});

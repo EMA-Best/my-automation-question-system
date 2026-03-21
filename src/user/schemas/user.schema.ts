@@ -90,3 +90,6 @@ export class User {
 export const UserSchema = SchemaFactory.createForClass(User);
 
 UserSchema.index({ role: 1, status: 1 });
+
+// 管理端用户列表：role/status 过滤 + createdAt/_id 倒序
+UserSchema.index({ role: 1, status: 1, createdAt: -1, _id: -1 });

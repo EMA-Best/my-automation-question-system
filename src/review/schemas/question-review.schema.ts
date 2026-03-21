@@ -50,3 +50,11 @@ export const QuestionReviewSchema =
 
 QuestionReviewSchema.index({ status: 1, submittedAt: -1 });
 QuestionReviewSchema.index({ questionId: 1, submittedAt: -1 });
+
+// 审核通过/驳回时按 questionId + status 查询并取最新提交记录
+QuestionReviewSchema.index({
+  questionId: 1,
+  status: 1,
+  submittedAt: -1,
+  _id: -1,
+});
