@@ -15,7 +15,11 @@ const EditPublishButton: FC = () => {
   const { role } = useGetUserInfo();
 
   const { auditStatus, auditReason } = pageInfo;
-  const canPublish = role === 'admin' || auditStatus === 'Approved';
+  const { isPublished } = pageInfo;
+
+  // 已发布问卷不可再次点击发布
+  const canPublish =
+    !isPublished && (role === 'admin' || auditStatus === 'Approved');
 
   // ajax 发布问卷
   const { loading, run: publish } = useRequest(
@@ -54,8 +58,9 @@ const EditPublishButton: FC = () => {
     }
   );
 
-  const tooltipTitle =
-    role === 'admin'
+  const tooltipTitle = isPublished
+    ? '该问卷已发布'
+    : role === 'admin'
       ? ''
       : auditStatus === 'Rejected' && auditReason
         ? `审核未通过：${auditReason}`

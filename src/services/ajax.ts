@@ -35,9 +35,9 @@ function isLoginApi(url: string): boolean {
 }
 
 const instance = axios.create({
-  baseURL: 'http://localhost:3005/',
+  baseURL: 'http://localhost:3007/',
   // baseURL: 'http://localhost:3001/',
-  timeout: 10 * 1000,
+  timeout: 60 * 1000, // 增加超时时间到 60 秒
 });
 
 instance.interceptors.request.use(

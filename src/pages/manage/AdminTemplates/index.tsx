@@ -45,8 +45,8 @@ import {
 import { useRequest, useTitle } from 'ahooks';
 import { getComponentConfigByType } from '../../../components/QuestionComponents';
 import type { ComponentInfoType } from '../../../store/componentsReducer';
-import { getAdminQuestionDetailService } from '../../../services/admin';
 import {
+  getAdminTemplateDetailService,
   getAdminTemplateListService,
   publishAdminTemplateService,
   unpublishAdminTemplateService,
@@ -167,7 +167,7 @@ const AdminTemplates: FC<AdminTemplatesProps> = (props) => {
     run: loadPreview,
   } = useRequest(
     async (templateId: string) => {
-      const res = await getAdminQuestionDetailService(templateId);
+      const res = await getAdminTemplateDetailService(templateId);
       return res;
     },
     {
@@ -244,11 +244,9 @@ const AdminTemplates: FC<AdminTemplatesProps> = (props) => {
 
       const typedAction = action as ActionType;
 
-      // ── 编辑模板：跳转到编辑页（复用问卷编辑器） ──
+      // ── 编辑模板：进入完整编辑页（支持结构编辑） ──
       if (typedAction === 'edit') {
-        // TODO: 后续可跳转到模板编辑页，当前先用 window.open 打开
-        // 文档 §4.1.1 建议直接复用现有问卷编辑器
-        window.open(`/question/edit/${id}`, '_blank');
+        window.open(`/question/edit/${id}?mode=template`, '_blank');
         return;
       }
 

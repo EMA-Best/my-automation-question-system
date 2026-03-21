@@ -200,3 +200,70 @@ export async function getComponentStatStatService(
   const data = (await axios.get(url)) as ResDataType;
   return data;
 }
+
+// AI 报告相关类型
+export type GenerateAIReportPayload = {
+  mode?: 'quick' | 'standard' | 'deep';
+  timeRange?: 'all' | '7d' | '30d';
+  includeTextAnswers?: boolean;
+  maxAnswers?: number;
+};
+
+export type AIReportTaskStatus = {
+  taskId: string;
+  status: 'pending' | 'processing' | 'succeeded' | 'failed';
+  errorMessage?: string | null;
+  report?: any;
+};
+
+// 获取最新 AI 报告
+export async function getQuestionAIReportLatestService(
+  questionId: string
+): Promise<any> {
+  const url = `/api/stat/${questionId}/ai-report/latest`;
+  const data = (await axios.get(url)) as any;
+  return data;
+}
+
+// 生成 AI 报告
+export async function generateQuestionAIReportService(
+  questionId: string,
+  payload: GenerateAIReportPayload
+): Promise<AIReportTaskStatus> {
+  try {
+    const url = `/api/stat/${questionId}/ai-report/generate`;
+    console.log('创建 AI 报告任务:', url, payload);
+    const data = (await axios.post(url, payload, {
+      timeout: 30 * 1000,
+    })) as AIReportTaskStatus;
+    console.log('AI 报告任务创建成功:', data);
+    return data;
+  } catch (error) {
+    console.error('创建 AI 报告任务失败:', error);
+    throw error;
+  }
+}
+
+// 查询 AI 报告任务状态
+export async function getQuestionAIReportTaskStatusService(
+  questionId: string,
+  taskId: string
+): Promise<AIReportTaskStatus> {
+  const url = `/api/stat/${questionId}/ai-report/tasks/${taskId}`;
+  const data = (await axios.get(url, {
+    timeout: 30 * 1000,
+  })) as AIReportTaskStatus;
+  return data;
+}
+
+// 重新生成 AI 报告
+export async function regenerateQuestionAIReportService(
+  questionId: string,
+  payload: GenerateAIReportPayload
+): Promise<AIReportTaskStatus> {
+  const url = `/api/stat/${questionId}/ai-report/regenerate`;
+  const data = (await axios.post(url, payload, {
+    timeout: 30 * 1000,
+  })) as AIReportTaskStatus;
+  return data;
+}

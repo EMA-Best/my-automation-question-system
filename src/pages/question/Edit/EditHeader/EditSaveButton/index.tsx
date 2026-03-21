@@ -1,8 +1,9 @@
 import { FC } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import useGetComponentInfo from '../../../../../hooks/useGetComponentInfo';
 import { useKeyPress, useRequest, useDebounceEffect } from 'ahooks';
 import { updateQuestionService } from '../../../../../services/question';
+import { updateAdminTemplateService } from '../../../../../services/template';
 import { Button } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import useGetPageInfo from '../../../../../hooks/useGetPageInfo';
@@ -10,6 +11,8 @@ import useGetPageInfo from '../../../../../hooks/useGetPageInfo';
 const EditSaveButton: FC = () => {
   // 获取路由参数中的问卷id
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const isTemplateMode = searchParams.get('mode') === 'template';
   const { componentList = [] } = useGetComponentInfo();
   const pageInfo = useGetPageInfo();
 
@@ -25,7 +28,18 @@ const EditSaveButton: FC = () => {
       } = pageInfo;
       void _auditStatus;
       void _auditReason;
-      await updateQuestionService(id, { ...rest, componentList });
+      if (isTemplateMode) {
+        const { title = '', desc = '', js = '', css = '' } = rest;
+        await updateAdminTemplateService(id, {
+          title,
+          desc,
+          js,
+          css,
+          componentList,
+        });
+      } else {
+        await updateQuestionService(id, { ...rest, componentList });
+      }
     },
     { manual: true }
   );

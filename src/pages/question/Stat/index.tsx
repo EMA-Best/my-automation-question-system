@@ -10,8 +10,9 @@ import StatHeader from './StatHeader';
 import ComponentList from './ComponentList';
 import PageStat from './PageStat';
 import ChartStat from './ChartStat';
+import AIReport from './AIReport';
 
-type RightViewKey = 'table' | 'chart';
+type RightViewKey = 'table' | 'chart' | 'ai-report';
 
 const { Text } = Typography;
 
@@ -86,6 +87,7 @@ const Stat: FC = () => {
               items={[
                 { key: 'table', label: '表格统计' },
                 { key: 'chart', label: '图表统计' },
+                { key: 'ai-report', label: 'AI分析报告' },
               ]}
             />
           </div>
@@ -96,6 +98,8 @@ const Stat: FC = () => {
                 selectedComponentId={selectedComponentId}
                 selectedComponentType={selectedComponentType}
               />
+            ) : rightView === 'ai-report' ? (
+              <AIReport />
             ) : (
               <PageStat
                 selectedComponentId={selectedComponentId}
