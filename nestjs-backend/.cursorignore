@@ -1,0 +1,39 @@
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+node_modules/
+dist/
+.env
+*.env
+*.key
+*.pem
+*.crt
+*.log
+*.sqlite
+*.db
+*.csv
+coverage/
+.DS_Store
+# 忽略常见 IDE 编辑器相关文件
+.vscode/
+.idea/
+# 忽略打包或构建产物
+build/
+out/
+tmp/
+temp/
+# 忽略测试快照或本地配置
+*.local
+*.test.*
+*.spec.*
+# 忽略敏感配置文件
+*.secret
+secrets.*
+config/*.local.*
+config/*.prod.*
+# 忽略未涉及的文档或样例
+example/
+samples/
+docs/
+# 忽略.github目录
+.github/
+# 忽略.gitignore文件
+.gitignore
