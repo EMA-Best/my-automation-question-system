@@ -23,5 +23,5 @@
     "noFallthroughCasesInSwitch": false,
   },
     // ✅ 正确位置：和 compilerOptions 平级
-  "exclude": ["node_modules", "test", "**/*.spec.ts", "**/*.e2e-spec.ts"]
+  "exclude": ["node_modules", "test", "**/*.spec.ts", "**/*.e2e-spec.ts","scripts"]
 }
