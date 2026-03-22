@@ -21,7 +21,7 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-     // 新增这一行，排除测试文件
-    "exclude": ["node_modules", "test", "**/*spec.ts", "**/*e2e-spec.ts"]
-  }
+  },
+    // ✅ 正确位置：和 compilerOptions 平级
+  "exclude": ["node_modules", "test", "**/*.spec.ts", "**/*.e2e-spec.ts"]
 }
