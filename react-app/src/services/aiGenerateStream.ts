@@ -47,7 +47,7 @@ export type AIGenerateStreamEvent =
       data: unknown;
     };
 
-const API_BASE_URL = 'http://localhost:3005';
+const API_BASE_URL = 'http://localhost:3007';
 const STREAM_ENDPOINT = '/api/question/ai-generate/stream';
 
 function parseSseEventBlock(
