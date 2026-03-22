@@ -1,8 +1,8 @@
-﻿/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call */
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { AnswerService } from 'src/answer/answer.service';
-import { QuestionService } from 'src/question/question.service';
+import { AnswerService } from '../answer/answer.service';
+import { QuestionService } from '../question/question.service';
 import type { Model } from 'mongoose';
 import { Answer } from '../answer/schemas/answer.schema';
 import { Question } from '../question/schemas/question.schema';

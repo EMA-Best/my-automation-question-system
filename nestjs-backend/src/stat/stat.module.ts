@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { StatService } from './stat.service';
 import { StatController } from './stat.controller';
-import { QuestionModule } from 'src/question/question.module';
-import { AnswerModule } from 'src/answer/answer.module';
+import { QuestionModule } from '../question/question.module';
+import { AnswerModule } from '../answer/answer.module';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Question, QuestionSchema } from 'src/question/schemas/question.schema';
-import { Answer, AnswerSchema } from 'src/answer/schemas/answer.schema';
+import { Question, QuestionSchema } from '../question/schemas/question.schema';
+import { Answer, AnswerSchema } from '../answer/schemas/answer.schema';
 
 @Module({
   imports: [

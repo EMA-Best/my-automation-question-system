@@ -16,8 +16,8 @@ import {
   CountAllParams,
   QuestionUpdateResult,
 } from './question.service';
-import { OptionalAuth } from 'src/auth/decorators/optional-auth.decorator';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { OptionalAuth } from '../auth/decorators/optional-auth.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { AIGenerateQuestionDto } from './dto/ai-generate.dto';
 import type { Response, Request as ExpressRequest } from 'express';
 import type { AIGenerateStreamHandlers } from '../ai/ai.service';
