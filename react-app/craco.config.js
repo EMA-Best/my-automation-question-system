@@ -10,6 +10,10 @@ module.exports = {
   },
   webpack: {
     configure: (webpackConfig) => {
+      // ========== 新增：移除 ESLintWebpackPlugin 避免打包报错 ==========
+      webpackConfig.plugins = webpackConfig.plugins.filter(
+        (plugin) => plugin.constructor.name !== 'ESLintWebpackPlugin'
+      );
       webpackConfig.plugins.push(
         new BundleAnalyzerPlugin({
           analyzerMode: 'static', // 生成 HTML 文件
