@@ -1,6 +1,5 @@
 // craco.config.js
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-const { whenDev } = require('@craco/craco'); // 新增
 
 module.exports = {
   devServer: {
@@ -11,23 +10,16 @@ module.exports = {
   },
   webpack: {
     configure: (webpackConfig) => {
-      webpackConfig.plugins = [
-        ...webpackConfig.plugins,
-        ...whenDev(() => [
+      // 只在开发环境添加 BundleAnalyzerPlugin
+      if (webpackConfig.mode === 'development') {
+        webpackConfig.plugins.push(
           new BundleAnalyzerPlugin({
-            analyzerMode: 'static', // 生成 HTML 文件
-            openAnalyzer: false, // 关闭构建完成后自动打开浏览器
-            defaultSizes: 'stat', // 使用 stats 中的大小，避免读取 build 目录下不存在的旧文件名（如 bundle.js）
-          }),
-        ]),
-      ];
-      // webpackConfig.plugins.push(
-      //   new BundleAnalyzerPlugin({
-      //     analyzerMode: 'static', // 生成 HTML 文件
-      //     openAnalyzer: false, // 关闭构建完成后自动打开浏览器
-      //     defaultSizes: 'stat', // 使用 stats 中的大小，避免读取 build 目录下不存在的旧文件名（如 bundle.js）
-      //   })
-      // );
+            analyzerMode: 'static',
+            openAnalyzer: false,
+            defaultSizes: 'stat',
+          })
+        );
+      }
       if (webpackConfig.mode === 'production') {
         // 抽离公共代码，只在生成环境
         if (webpackConfig.optimization == null) {
