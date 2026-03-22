@@ -23,34 +23,25 @@ import { StatReportModule } from './stat-report/stat-report.module';
 @Module({
   imports: [
     // 配置模块，加载环境变量
-    ConfigModule.forRoot(),
-    
+    ConfigModule.forRoot({ isGlobal: true }),
     // MongoDB 数据库连接配置
     MongooseModule.forRoot(
       `mongodb://${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}`,
     ),
-    
     // 问卷模块
     QuestionModule,
-    
     // 用户模块
     UserModule,
-    
     // 认证模块
     AuthModule,
-    
     // 答卷模块
     AnswerModule,
-    
     // 统计模块
     StatModule,
-    
     // 管理模块
     AdminModule,
-    
     // 模板模块
     TemplateModule,
-    
     // 统计报告模块
     StatReportModule,
   ],
