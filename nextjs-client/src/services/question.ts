@@ -1,5 +1,14 @@
+/**
+ * 问卷服务
+ * 处理问卷相关的API调用
+ */
 import { GET } from "./ajax";
 
+/**
+ * 根据ID获取问卷详情
+ * @param id 问卷ID
+ * @returns 问卷详情数据
+ */
 export async function getQuestionById(id: string) {
   const url = `/api/question/${id}`;
   const data = await GET(url);
@@ -9,6 +18,7 @@ export async function getQuestionById(id: string) {
 /**
  * 获取热门问卷列表（置顶/推荐）
  * 包含题目数量和答卷数量统计
+ * @returns 热门问卷列表数据
  */
 export async function getFeaturedQuestions() {
   const url = `/api/questions/featured`;
@@ -27,10 +37,13 @@ export async function getQuestionPreview(id: string) {
   return data;
 }
 
+/**
+ * 创建问卷响应类型
+ */
 export type CreateQuestionRes = {
-  id?: string;
-  _id?: string;
-  questionId?: string;
+  id?: string;        // 问卷ID
+  _id?: string;       // 问卷ID（MongoDB风格）
+  questionId?: string; // 问卷ID（备用字段）
 };
 
 /**
@@ -39,6 +52,8 @@ export type CreateQuestionRes = {
  * 对应接口：POST /api/proxy/question
  * - 401：未登录
  * - 200：返回新问卷对象（通常含 _id）
+ * @returns 创建的问卷信息
+ * @throws Error 当未登录或请求失败时
  */
 export async function createQuestionByProxy(): Promise<CreateQuestionRes> {
   const res = await fetch(`/api/proxy/question`, {
@@ -46,12 +61,14 @@ export async function createQuestionByProxy(): Promise<CreateQuestionRes> {
     headers: { "Content-Type": "application/json" },
   });
 
+  // 处理未登录情况
   if (res.status === 401) {
     const err = new Error("UNAUTHORIZED") as Error & { status: number };
     err.status = 401;
     throw err;
   }
 
+  // 处理其他错误
   if (!res.ok) {
     const json = await res.json().catch(() => ({}));
     const err = new Error(
@@ -61,6 +78,7 @@ export async function createQuestionByProxy(): Promise<CreateQuestionRes> {
     throw err;
   }
 
+  // 解析响应数据
   const json = await res.json();
   // 兼容后端可能返回 { data: {...} } 或直接返回对象两种结构
   return (json.data ?? json) as CreateQuestionRes;

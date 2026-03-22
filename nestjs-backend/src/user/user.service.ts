@@ -1,3 +1,7 @@
+/**
+ * 用户服务
+ * 处理用户相关的业务逻辑
+ */
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { User } from './schemas/user.schema';
 import { Model } from 'mongoose';
@@ -7,12 +11,21 @@ import { hashPassword, isBcryptHash, verifyPassword } from './password.util';
 
 @Injectable()
 export class UserService {
-  // 依赖注入用户模型
+  /**
+   * 构造函数
+   * @param userModel 用户模型实例
+   */
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
 
+  /**
+   * 创建新用户
+   * @param userData 用户数据
+   * @returns 创建的用户对象
+   */
   async create(userData: CreateUserDto) {
+    // 密码加密
     const hashedPassword = await hashPassword(userData.password);
     const createdUser = new this.userModel({
       ...userData,
@@ -21,6 +34,12 @@ export class UserService {
     return await createdUser.save();
   }
 
+  /**
+   * 根据用户名和密码查找用户
+   * @param username 用户名
+   * @param password 密码
+   * @returns 用户对象，如果用户名或密码错误则返回null
+   */
   async findOne(username: string, password: string) {
     const user = await this.userModel.findOne({ username });
     if (!user) return null;
@@ -51,6 +70,12 @@ export class UserService {
     return user;
   }
 
+  /**
+   * 获取用户信息
+   * @param userId 用户ID
+   * @returns 用户信息对象
+   * @throws 当用户不存在时，抛出404错误
+   */
   async getUserInfo(userId: string) {
     const user = await this.userModel.findById(userId);
     if (!user) {
@@ -69,6 +94,13 @@ export class UserService {
     return { username, nickname, role, mustChangePassword };
   }
 
+  /**
+   * 更新用户昵称
+   * @param userId 用户ID
+   * @param nickname 新昵称
+   * @returns 更新后的用户信息
+   * @throws 当用户不存在时，抛出404错误
+   */
   async updateNickname(userId: string, nickname: string) {
     const updated = await this.userModel.findByIdAndUpdate(
       userId,
@@ -90,6 +122,16 @@ export class UserService {
     return { username, nickname: nick, role };
   }
 
+  /**
+   * 修改用户密码
+   * @param userId 用户ID
+   * @param oldPassword 旧密码
+   * @param newPassword 新密码
+   * @param meta 元数据，包含操作者用户名和IP地址
+   * @returns 空对象
+   * @throws 当用户不存在时，抛出404错误
+   * @throws 当旧密码不正确时，抛出400错误
+   */
   async changePassword(
     userId: string,
     oldPassword: string,
@@ -128,6 +170,11 @@ export class UserService {
     return {};
   }
 
+  /**
+   * 更新用户最后登录时间
+   * @param userId 用户ID
+   * @returns 更新结果
+   */
   async updateLastLoginAt(userId: string) {
     return await this.userModel.updateOne(
       { _id: userId },

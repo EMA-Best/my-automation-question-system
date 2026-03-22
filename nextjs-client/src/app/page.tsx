@@ -1,30 +1,45 @@
+/**
+ * 问卷系统首页
+ * 展示热门问卷、功能介绍和行动号召
+ */
 import { Metadata } from "next";
 import Link from "next/link";
 import { getFeaturedQuestions } from "@/services/question";
 import TopBar from "@/components/TopBar";
 import CreateQuestionButton from "./_components/CreateQuestionButton";
 
+/**
+ * 页面元数据
+ */
 export const metadata: Metadata = {
   title: "问卷系统 - 首页",
   description: "欢迎使用我们的问卷填写系统",
 };
 
+/**
+ * 热门问卷类型
+ */
 interface FeaturedQuestion {
-  id: string;
-  title: string;
-  description: string;
-  featured?: boolean;
-  pinned?: boolean;
-  questionCount: number;
-  answerCount: number;
-  publishedAt: string;
+  id: string;              // 问卷ID
+  title: string;           // 问卷标题
+  description: string;     // 问卷描述
+  featured?: boolean;      // 是否推荐
+  pinned?: boolean;        // 是否置顶
+  questionCount: number;   // 问题数量
+  answerCount: number;     // 回答数量
+  publishedAt: string;     // 发布时间
 }
 
+/**
+ * 问卷列表组件
+ * 异步获取并展示热门问卷
+ */
 async function QuestionList() {
   let questions: FeaturedQuestion[] = [];
   let hasError = false;
 
   try {
+    // 调用API获取热门问卷
     const res = await getFeaturedQuestions();
     questions = res.data || [];
   } catch (error) {
@@ -32,6 +47,7 @@ async function QuestionList() {
     hasError = true;
   }
 
+  // 错误状态处理
   if (hasError) {
     return (
       <div className="text-center py-8 text-red-500">
@@ -40,10 +56,12 @@ async function QuestionList() {
     );
   }
 
+  // 空状态处理
   if (questions.length === 0) {
     return <div className="text-center py-8 text-gray-500">暂无热门问卷</div>;
   }
 
+  // 渲染问卷列表
   return (
     <div className="space-y-4">
       {questions.map((question) => (
@@ -58,18 +76,22 @@ async function QuestionList() {
                 <h3 className="text-xl font-semibold text-gray-800">
                   {question.title}
                 </h3>
+                {/* 置顶标签 */}
                 {question.pinned && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
                     🔝 置顶
                   </span>
                 )}
+                {/* 推荐标签 */}
                 {question.featured && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
                     ⭐ 推荐
                   </span>
                 )}
               </div>
+              {/* 问卷描述 */}
               <p className="text-gray-600 mb-3">{question.description}</p>
+              {/* 问卷统计信息 */}
               <div className="flex items-center text-sm text-gray-500">
                 <span className="mr-4">
                   📋 共{question.questionCount}个问题
@@ -84,10 +106,16 @@ async function QuestionList() {
   );
 }
 
+/**
+ * 首页主组件
+ * @returns 首页界面
+ */
 export default function Home() {
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-purple-50">
+      {/* 顶部导航栏 */}
       <TopBar />
+      
       {/* 主体内容区：上下内边距 + 水平居中 */}
       <div className="py-12 px-4">
         <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
@@ -103,6 +131,7 @@ export default function Home() {
 
           {/* 功能介绍 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            {/* 创建问卷 */}
             <div className="bg-linear-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
               <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold mb-4">
                 1
@@ -114,6 +143,8 @@ export default function Home() {
                 简单易用的问卷编辑器，支持多种题型和自定义样式
               </p>
             </div>
+            
+            {/* 分享问卷 */}
             <div className="bg-linear-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200">
               <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white text-xl font-bold mb-4">
                 2
@@ -123,6 +154,8 @@ export default function Home() {
               </h3>
               <p className="text-gray-600">生成唯一链接，轻松分享给受访者</p>
             </div>
+            
+            {/* 分析数据 */}
             <div className="bg-linear-to-br from-pink-50 to-pink-100 p-6 rounded-xl border border-pink-200">
               <div className="w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center text-white text-xl font-bold mb-4">
                 3

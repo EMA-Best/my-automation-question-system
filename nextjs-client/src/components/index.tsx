@@ -1,3 +1,7 @@
+/**
+ * 组件索引文件
+ * 定义问卷系统中所有组件的类型和获取组件的函数
+ */
 import QuestionInput from "./QuestionInput";
 import QuestionRadio from "./QuestionRadio";
 import QuestionInfo from "./QuestionInfo";
@@ -6,92 +10,124 @@ import QuestionParagraph from "./QuestionParagraph";
 import QuestionTextarea from "./QuestionTextarea";
 import QuestionCheckbox from "./QuestionCheckbox";
 
+/**
+ * 输入框组件属性类型
+ */
 type QuestionInputProps = {
-  title: string;
-  placeholder: string;
+  title: string;            // 问题标题
+  placeholder: string;      // 输入框占位符
 };
 
+/**
+ * 单选框组件属性类型
+ */
 type QuestionRadioProps = {
-  title: string;
-  options: Array<{ value: string; text: string }>;
-  value: string;
-  isVertical: boolean;
+  title: string;                                    // 问题标题
+  options: Array<{ value: string; text: string }>;   // 选项列表
+  value: string;                                    // 默认选中值
+  isVertical: boolean;                              // 是否垂直排列
 };
 
+/**
+ * 复选框组件属性类型
+ */
 type QuestionCheckboxProps = {
-  title: string;
-  isVertical?: boolean;
-  options: Array<{ value: string; text: string; checked: boolean }>;
+  title: string;                                                    // 问题标题
+  isVertical?: boolean;                                            // 是否垂直排列
+  options: Array<{ value: string; text: string; checked: boolean }>; // 选项列表
 };
 
+/**
+ * 文本域组件属性类型
+ */
 type QuestionTextareaProps = {
-  title: string;
-  placeholder?: string;
+  title: string;        // 问题标题
+  placeholder?: string; // 文本域占位符
 };
 
+/**
+ * 信息展示组件属性类型
+ */
 type QuestionInfoProps = {
-  title: string;
-  desc?: string;
+  title: string;    // 信息标题
+  desc?: string;    // 信息描述
 };
 
+/**
+ * 标题组件属性类型
+ */
 type QuestionTitleProps = {
-  text: string;
-  level: number;
-  isCenter?: boolean;
+  text: string;     // 标题文本
+  level: number;    // 标题级别（1-6）
+  isCenter?: boolean; // 是否居中对齐
 };
 
+/**
+ * 段落组件属性类型
+ */
 type QuestionParagraphProps = {
-  text: string;
-  isCenter?: boolean;
+  text: string;     // 段落文本
+  isCenter?: boolean; // 是否居中对齐
 };
 
+/**
+ * 组件信息类型
+ * 联合类型，包含所有支持的组件类型
+ */
 type ComponentInfoType =
   | {
-      fe_id: string;
-      type: "questionInput";
-      isHidden: boolean;
-      props: QuestionInputProps;
+      fe_id: string;               // 前端组件ID
+      type: "questionInput";       // 组件类型：输入框
+      isHidden: boolean;           // 是否隐藏
+      props: QuestionInputProps;    // 组件属性
     }
   | {
-      fe_id: string;
-      type: "questionRadio";
-      isHidden: boolean;
-      props: QuestionRadioProps;
+      fe_id: string;               // 前端组件ID
+      type: "questionRadio";       // 组件类型：单选框
+      isHidden: boolean;           // 是否隐藏
+      props: QuestionRadioProps;    // 组件属性
     }
   | {
-      fe_id: string;
-      type: "questionCheckbox";
-      isHidden: boolean;
-      props: QuestionCheckboxProps;
+      fe_id: string;                 // 前端组件ID
+      type: "questionCheckbox";      // 组件类型：复选框
+      isHidden: boolean;             // 是否隐藏
+      props: QuestionCheckboxProps;   // 组件属性
     }
   | {
-      fe_id: string;
-      type: "questionTextarea";
-      isHidden: boolean;
-      props: QuestionTextareaProps;
+      fe_id: string;                 // 前端组件ID
+      type: "questionTextarea";      // 组件类型：文本域
+      isHidden: boolean;             // 是否隐藏
+      props: QuestionTextareaProps;   // 组件属性
     }
   | {
-      fe_id: string;
-      type: "questionInfo";
-      isHidden: boolean;
-      props: QuestionInfoProps;
+      fe_id: string;               // 前端组件ID
+      type: "questionInfo";        // 组件类型：信息展示
+      isHidden: boolean;           // 是否隐藏
+      props: QuestionInfoProps;     // 组件属性
     }
   | {
-      fe_id: string;
-      type: "questionTitle";
-      isHidden: boolean;
-      props: QuestionTitleProps;
+      fe_id: string;                // 前端组件ID
+      type: "questionTitle";        // 组件类型：标题
+      isHidden: boolean;            // 是否隐藏
+      props: QuestionTitleProps;     // 组件属性
     }
   | {
-      fe_id: string;
-      type: "questionParagraph";
-      isHidden: boolean;
-      props: QuestionParagraphProps;
+      fe_id: string;                  // 前端组件ID
+      type: "questionParagraph";      // 组件类型：段落
+      isHidden: boolean;              // 是否隐藏
+      props: QuestionParagraphProps;   // 组件属性
     };
 
+/**
+ * 根据组件信息获取对应的React组件
+ * @param comp 组件信息对象
+ * @returns 对应的React组件或null（如果组件隐藏）
+ */
 export const getComponent = (comp: ComponentInfoType) => {
+  // 如果组件隐藏，返回null
   if (comp.isHidden) return null;
 
+  // 根据组件类型返回对应的React组件
   switch (comp.type) {
     case "questionInput":
       return <QuestionInput fe_id={comp.fe_id} props={comp.props} />;
