@@ -25,9 +25,22 @@ import { StatReportModule } from './stat-report/stat-report.module';
     // 配置模块，加载环境变量
     ConfigModule.forRoot({ isGlobal: true }),
     // MongoDB 数据库连接配置
-    MongooseModule.forRoot(
-      `mongodb://${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}`,
-    ),
+    // MongooseModule.forRoot(
+    //   `mongodb://${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}`,
+    // ),
+    MongooseModule.forRootAsync({
+      useFactory: () => {
+        // 优先使用 MONGODB_URI（Render 环境），不存在则拼接本地地址（开发环境）
+        const mongoUri = process.env.MONGODB_URI;
+        if (mongoUri) {
+          return { uri: mongoUri };
+        }
+        // 本地开发环境 fallback
+        return {
+          uri: `mongodb://${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}`,
+        };
+      },
+    }),
     // 问卷模块
     QuestionModule,
     // 用户模块
