@@ -9,6 +9,7 @@
  *  - 顶部显示 TopBar，展示登录状态。
  */
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import TopBar from "@/components/TopBar";
 import { getTemplateDetail, getTemplateList } from "@/services/template";
@@ -397,7 +398,9 @@ export default async function TemplatesPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 via-purple-50 to-pink-50">
-      <TopBar />
+      <Suspense fallback={<div className="h-16 bg-gray-50 border-b border-gray-200" />}>
+        <TopBar />
+      </Suspense>
       <div className="py-12 px-4">
         <div className="max-w-7xl mx-auto">
           {/* 页头区域 - 美化版 */}

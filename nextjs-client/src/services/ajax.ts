@@ -25,12 +25,13 @@ function getBackendBaseCandidates(): string[] {
     process.env.BACKEND_API_BASE,
   ].filter((v): v is string => typeof v === "string" && v.trim().length > 0);
 
-  // 历史联调端口兼容：3005/3007
-  const defaults = ["http://localhost:3005", "http://localhost:3007"];
+  if (fromEnv.length === 0) {
+    throw new Error("请在环境变量中配置 NEXT_PUBLIC_BACKEND_API_BASE");
+  }
 
   // 去重并返回
   return Array.from(
-    new Set([...fromEnv.map((v) => normalizeBaseUrl(v.trim())), ...defaults]),
+    new Set(fromEnv.map((v) => normalizeBaseUrl(v.trim()))),
   );
 }
 
@@ -49,7 +50,6 @@ async function fetchWithBaseFallback(url: string, init?: RequestInit) {
   for (const base of bases) {
     try {
       return await fetch(`${base}${url}`, {
-        cache: "no-store", // 禁用缓存
         ...init,
       });
     } catch (error) {

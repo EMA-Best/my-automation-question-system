@@ -3,6 +3,7 @@
  * 展示热门问卷、功能介绍和行动号召
  */
 import { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { getFeaturedQuestions } from "@/services/question";
 import TopBar from "@/components/TopBar";
@@ -114,7 +115,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-purple-50">
       {/* 顶部导航栏 */}
-      <TopBar />
+      <Suspense fallback={<div className="h-16 bg-gray-50 border-b border-gray-200" />}>
+        <TopBar />
+      </Suspense>
       
       {/* 主体内容区：上下内边距 + 水平居中 */}
       <div className="py-12 px-4">

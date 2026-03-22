@@ -22,8 +22,7 @@ import type {
 // -------------------------------------------------------
 const BACKEND_BASE =
   process.env.BACKEND_API_BASE ??
-  process.env.NEXT_PUBLIC_BACKEND_API_BASE ??
-  "http://localhost:3007";
+  process.env.NEXT_PUBLIC_BACKEND_API_BASE;
 
 /**
  * 处理后端响应，统一判断 errno
