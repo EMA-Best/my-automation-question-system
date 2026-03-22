@@ -39,8 +39,8 @@ function toLines(input: string): string[] {
 }
 
 type YAxisTickProps = {
-  x?: number;
-  y?: number;
+  x?: number | string;
+  y?: number | string;
   payload?: { value?: unknown };
 };
 
