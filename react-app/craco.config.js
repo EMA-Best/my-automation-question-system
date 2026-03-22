@@ -1,5 +1,7 @@
 // craco.config.js
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+// 手动引入 ESLintWebpackPlugin
+const ESLintWebpackPlugin = require('eslint-webpack-plugin');
 
 module.exports = {
   devServer: {
@@ -10,9 +12,15 @@ module.exports = {
   },
   webpack: {
     configure: (webpackConfig) => {
-      // ========== 新增：移除 ESLintWebpackPlugin 避免打包报错 ==========
+      // 先清空旧的 ESLint 插件
       webpackConfig.plugins = webpackConfig.plugins.filter(
         (plugin) => plugin.constructor.name !== 'ESLintWebpackPlugin'
+      );
+      // 手动添加我们引入的 ESLintWebpackPlugin
+      webpackConfig.plugins.push(
+        new ESLintWebpackPlugin({
+          // 可以留空，用默认配置
+        })
       );
       webpackConfig.plugins.push(
         new BundleAnalyzerPlugin({
