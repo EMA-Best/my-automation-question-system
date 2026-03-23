@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --build tsconfig.build.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -25,7 +25,7 @@
     "cleanup:legacy-templates": "ts-node -T scripts/cleanup-legacy-question-templates.ts",
     "cleanup:template-removed-fields": "ts-node -T scripts/cleanup-template-removed-fields.ts",
     "cleanup:question-template-fields": "ts-node -T scripts/cleanup-question-template-fields.ts",
-    "seed:atlas": "ts-node -T seed.ts"
+    "seed:atlas": "ts-node -T scripts/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -57,6 +57,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^22.10.7",
     "@types/supertest": "^6.0.2",
+    "dotenv": "^17.3.1",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
