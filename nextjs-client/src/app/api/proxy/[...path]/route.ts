@@ -30,7 +30,14 @@ async function proxyRequest(req: NextRequest) {
   // 3. 构造转发 URL
   const pathSegments = req.nextUrl.pathname.replace("/api/proxy", "");
   const search = req.nextUrl.search;
-  const backendUrl = `${process.env.BACKEND_API_BASE}/api${pathSegments}${search}`;
+  
+  // 获取后端 API 基础地址
+  const backendBase = process.env.NEXT_PUBLIC_BACKEND_API_BASE || process.env.BACKEND_API_BASE;
+  if (!backendBase) {
+    return NextResponse.json({ errno: 500, msg: "缺少后端 API 基础地址配置" }, { status: 500 });
+  }
+  
+  const backendUrl = `${backendBase.trim().replace(/\/+$/, "")}/api${pathSegments}${search}`;
 
   // 4. 转发请求
   try {

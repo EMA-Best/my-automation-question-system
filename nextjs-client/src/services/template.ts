@@ -20,9 +20,11 @@ import type {
 // -------------------------------------------------------
 // 工具：服务端（Server Component）直接请求后端基础 URL
 // -------------------------------------------------------
-const BACKEND_BASE =
-  process.env.BACKEND_API_BASE ??
-  process.env.NEXT_PUBLIC_BACKEND_API_BASE;
+const BACKEND_BASE = process.env.BACKEND_API_BASE ?? process.env.NEXT_PUBLIC_BACKEND_API_BASE;
+
+if (!BACKEND_BASE) {
+  throw new Error("请在环境变量中配置 BACKEND_API_BASE 或 NEXT_PUBLIC_BACKEND_API_BASE");
+}
 
 /**
  * 处理后端响应，统一判断 errno
