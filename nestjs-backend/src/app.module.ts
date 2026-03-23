@@ -7,7 +7,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { QuestionModule } from './question/question.module';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { AnswerModule } from './answer/answer.module';
@@ -28,18 +28,24 @@ import { StatReportModule } from './stat-report/stat-report.module';
     // MongooseModule.forRoot(
     //   `mongodb://${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}`,
     // ),
+    // MongooseModule.forRootAsync({
+    //   useFactory: () => {
+    //     // 优先使用 DATABASE_URL（用户配置的云端数据库），不存在则拼接本地地址（开发环境）
+    //     const mongoUri = process.env.DATABASE_URL;
+    //     if (mongoUri) {
+    //       return { uri: mongoUri };
+    //     }
+    //     // 本地开发环境 fallback
+    //     return {
+    //       uri: `mongodb://${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}`,
+    //     };
+    //   },
+    // }),
     MongooseModule.forRootAsync({
-      useFactory: () => {
-        // 优先使用 DATABASE_URL（用户配置的云端数据库），不存在则拼接本地地址（开发环境）
-        const mongoUri = process.env.DATABASE_URL;
-        if (mongoUri) {
-          return { uri: mongoUri };
-        }
-        // 本地开发环境 fallback
-        return {
-          uri: `mongodb://${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}`,
-        };
-      },
+      useFactory: (configService: ConfigService) => ({
+        uri: configService.get<string>('DATABASE_URL'), // 这里必须是 'DATABASE_URL'
+      }),
+      inject: [ConfigService],
     }),
     // 问卷模块
     QuestionModule,

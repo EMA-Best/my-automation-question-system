@@ -24,7 +24,8 @@
     "migrate:templates": "ts-node -T scripts/migrate-templates-to-collection.ts",
     "cleanup:legacy-templates": "ts-node -T scripts/cleanup-legacy-question-templates.ts",
     "cleanup:template-removed-fields": "ts-node -T scripts/cleanup-template-removed-fields.ts",
-    "cleanup:question-template-fields": "ts-node -T scripts/cleanup-question-template-fields.ts"
+    "cleanup:question-template-fields": "ts-node -T scripts/cleanup-question-template-fields.ts",
+    "seed:atlas": "ts-node -T seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
