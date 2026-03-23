@@ -143,8 +143,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // 发给浏览器的 session 只含脱敏用户信息（无 access_token）
       if (session.user) {
         session.user.id = token.sub ?? "";
-        session.user.name = token.name as string | undefined;
-        session.user.email = token.email as string | undefined;
+        session.user.name = token.name as string;
+        session.user.email = token.email as string;
       }
       // 不把 accessToken 放入 session，BFF 代理层从 token 中读
       return session;
