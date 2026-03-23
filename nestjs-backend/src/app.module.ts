@@ -30,8 +30,8 @@ import { StatReportModule } from './stat-report/stat-report.module';
     // ),
     MongooseModule.forRootAsync({
       useFactory: () => {
-        // 优先使用 MONGODB_URI（Render 环境），不存在则拼接本地地址（开发环境）
-        const mongoUri = process.env.MONGODB_URI;
+        // 优先使用 DATABASE_URL（用户配置的云端数据库），不存在则拼接本地地址（开发环境）
+        const mongoUri = process.env.DATABASE_URL;
         if (mongoUri) {
           return { uri: mongoUri };
         }
