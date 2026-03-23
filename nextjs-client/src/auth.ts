@@ -132,12 +132,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user && (user as { accessToken?: string }).accessToken) {
         token.accessToken = (user as { accessToken?: string }).accessToken;
       }
+      // 保存用户信息到 token
+      if (user) {
+        token.name = user.name;
+        token.email = user.email;
+      }
       return token;
     },
     async session({ session, token }) {
       // 发给浏览器的 session 只含脱敏用户信息（无 access_token）
       if (session.user) {
         session.user.id = token.sub ?? "";
+        session.user.name = token.name as string | undefined;
+        session.user.email = token.email as string | undefined;
       }
       // 不把 accessToken 放入 session，BFF 代理层从 token 中读
       return session;
