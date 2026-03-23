@@ -65,8 +65,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!credentials?.username || !credentials?.password) return null;
 
         try {
+          // 获取后端 API 基础地址
+          const backendBase = process.env.NEXT_PUBLIC_BACKEND_API_BASE || process.env.BACKEND_API_BASE;
+          if (!backendBase) {
+            throw new Error("缺少后端 API 基础地址配置");
+          }
+          
           const res = await fetch(
-            `${process.env.BACKEND_API_BASE}/api/user/login`,
+            `${backendBase.trim().replace(/\/+$/, "")}/api/user/login`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
