@@ -73,8 +73,7 @@ function isLoginApi(url: string): boolean {
  * 用于统一处理API请求
  */
 const instance = axios.create({
-  baseURL: 'http://localhost:3007/', // 后端API基础路径
-  // baseURL: 'http://localhost:3001/', // 备用API路径
+  baseURL: process.env.REACT_APP_BACKEND_API_BASE || 'http://localhost:3007/', // 后端API基础路径
   timeout: 60 * 1000, // 超时时间：60秒
 });
 

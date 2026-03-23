@@ -47,7 +47,7 @@ export type AIGenerateStreamEvent =
       data: unknown;
     };
 
-const API_BASE_URL = 'http://localhost:3007';
+const API_BASE_URL = process.env.REACT_APP_BACKEND_API_BASE || 'http://localhost:3007';
 const STREAM_ENDPOINT = '/api/question/ai-generate/stream';
 
 function parseSseEventBlock(
