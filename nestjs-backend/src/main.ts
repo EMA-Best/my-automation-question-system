@@ -12,7 +12,7 @@ import { json, urlencoded } from 'express';
  * 应用启动函数
  */
 async function bootstrap() {
-  console.log('MONGODB_URI:', process.env.MONGODB_URI); // 加这行
+  console.log('MONGODB_URI:', process.env.MONGODB_URI); // 调试输出
   // 创建 NestJS 应用实例
   const app = await NestFactory.create(AppModule);
 
