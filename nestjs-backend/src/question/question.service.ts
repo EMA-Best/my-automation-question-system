@@ -184,7 +184,7 @@ export class QuestionService {
    * - updatedAt/_id 兜底
    */
   async getFeaturedQuestions(): Promise<FeaturedQuestionItem[]> {
-    const questions = await this.questionModel
+    let questions = await this.questionModel
       .find<FeaturedQuestionLeanDoc>({
         isDeleted: false,
         isPublished: true,
@@ -200,6 +200,26 @@ export class QuestionService {
       })
       .sort({ pinned: -1, pinnedAt: -1, featured: -1, updatedAt: -1, _id: -1 })
       .lean();
+
+    // Fallback: if no curated items are configured yet, show latest published questionnaires.
+    if (questions.length === 0) {
+      questions = await this.questionModel
+        .find<FeaturedQuestionLeanDoc>({
+          isDeleted: false,
+          isPublished: true,
+        })
+        .select({
+          title: 1,
+          desc: 1,
+          featured: 1,
+          pinned: 1,
+          pinnedAt: 1,
+          componentList: 1,
+        })
+        .sort({ updatedAt: -1, _id: -1 })
+        .limit(8)
+        .lean();
+    }
 
     // 批量拿到这些问卷的答卷数量
     const ids = questions.map((q) => String(q._id));
