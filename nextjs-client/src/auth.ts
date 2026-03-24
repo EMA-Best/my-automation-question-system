@@ -36,6 +36,8 @@ declare module "next-auth" {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: authSecret,
+  // Render sits behind a proxy; trust host headers to avoid UntrustedHost errors.
+  trustHost: true,
   useSecureCookies,
 
   cookies: {
