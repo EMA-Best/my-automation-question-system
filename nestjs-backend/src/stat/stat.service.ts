@@ -210,23 +210,19 @@ export class StatService {
       }),
     ]);
 
-    const agg = await this.answerModel.aggregate<{ count: number }>([
-      {
-        $lookup: {
-          from: 'questions',
-          let: { qid: '$questionId' },
-          pipeline: [
-            { $match: { $expr: { $eq: [{ $toString: '$_id' }, '$$qid'] } } },
-            { $match: { isDeleted: false } },
-            { $project: { _id: 1 } },
-          ],
-          as: 'q',
-        },
-      },
-      { $match: { 'q.0': { $exists: true } } },
-      { $count: 'count' },
-    ]);
-    const answerCount = agg[0]?.count ?? 0;
+    // Avoid $lookup + $toString on large answer collections.
+    // Query active question ids first, then count answers by indexed questionId.
+    const activeQuestions = await this.questionModel
+      .find(baseQuestionFilter, { _id: 1 })
+      .lean<{ _id: { toString: () => string } }[]>();
+    const activeQuestionIds = activeQuestions.map((q) => q._id.toString());
+
+    const answerCount =
+      activeQuestionIds.length > 0
+        ? await this.answerModel.countDocuments({
+            questionId: { $in: activeQuestionIds },
+          })
+        : 0;
 
     return { createdCount, publishedCount, answerCount };
   }

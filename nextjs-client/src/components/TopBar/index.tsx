@@ -47,14 +47,11 @@ export default function TopBar() {
 
   const bAppOrigin =
     process.env.NEXT_PUBLIC_B_APP_ORIGIN ?? "http://localhost:8000";
-  const cAppOrigin = useMemo(
-    () =>
-      (typeof window !== "undefined" ? window.location.origin : undefined) ??
-      process.env.NEXT_PUBLIC_C_APP_ORIGIN ??
-      process.env.NEXTAUTH_URL ??
-      "http://localhost:3000",
-    [],
-  );
+  // Keep SSR and first client render deterministic to avoid hydration mismatch.
+  const cAppOrigin =
+    process.env.NEXT_PUBLIC_C_APP_ORIGIN ??
+    process.env.NEXTAUTH_URL ??
+    "http://localhost:3000";
   const loginCallbackUrl = useMemo(() => {
     // 动态回传：登录后回到用户当前所在页面（而非固定首页）
     const callback = new URL(pathname || "/", cAppOrigin);

@@ -42,9 +42,23 @@ import { StatReportModule } from './stat-report/stat-report.module';
     //   },
     // }),
     MongooseModule.forRootAsync({
-      useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI'),
-      }),
+      useFactory: (configService: ConfigService) => {
+        const uri =
+          configService.get<string>('MONGODB_URI') ||
+          configService.get<string>('DATABASE_URL');
+
+        if (!uri) {
+          throw new Error(
+            'MongoDB connection string is missing. Set MONGODB_URI or DATABASE_URL.',
+          );
+        }
+
+        return {
+          uri,
+          serverSelectionTimeoutMS: 10_000,
+          socketTimeoutMS: 45_000,
+        };
+      },
       inject: [ConfigService],
     }),
     // 问卷模块
