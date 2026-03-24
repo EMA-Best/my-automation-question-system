@@ -9,6 +9,10 @@ import { getFeaturedQuestions } from "@/services/question";
 import TopBar from "@/components/TopBar";
 import CreateQuestionButton from "./_components/CreateQuestionButton";
 
+// Home page contains live "featured questionnaires" data from backend.
+// Force dynamic rendering to avoid build-time static cache showing stale empty data.
+export const dynamic = "force-dynamic";
+
 /**
  * 页面元数据
  */
