@@ -24,7 +24,6 @@ export default function SignOutButton({
     const cOrigin =
       (typeof window !== "undefined" ? window.location.origin : "") ||
       process.env.NEXT_PUBLIC_C_APP_ORIGIN ||
-      process.env.NEXTAUTH_URL ||
       "http://localhost:3000";
     const bOrigin =
       process.env.NEXT_PUBLIC_B_APP_ORIGIN || "http://localhost:8000";
