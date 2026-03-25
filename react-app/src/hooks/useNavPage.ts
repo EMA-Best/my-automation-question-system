@@ -29,9 +29,7 @@ const SSO_TRACE_SEQ_KEY = '__b_sso_trace_seq__';
  * - 值越小，自动探测越频繁（跳转也可能更频繁）
  * - 值越大，探测更克制（体验更稳）
  */
-type RuntimeEnv = { process?: { env?: Record<string, string | undefined> } };
-
-const ENV = (globalThis as RuntimeEnv).process?.env ?? {};
+const ENV = process.env as Record<string, string | undefined>;
 const SSO_PROBE_COOLDOWN_MINUTES_ENV = ENV.REACT_APP_SSO_PROBE_COOLDOWN_MINUTES;
 
 const parsedCooldownMinutes = Number(SSO_PROBE_COOLDOWN_MINUTES_ENV);
@@ -53,7 +51,7 @@ function logSsoDebug(message: string, extra?: unknown) {
     typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' ||
       window.location.hostname === '127.0.0.1');
-  const isDevEnv = ENV.NODE_ENV === 'development';
+  const isDevEnv = process.env.NODE_ENV === 'development';
   const isDev = isDevHost || isDevEnv;
   if (!isDev) return;
 

@@ -24,8 +24,7 @@
  *   2. 默认值 'http://localhost:3000'（本地联调兜底）
  */
 const C_APP_ORIGIN: string =
-  (globalThis as { process?: { env?: { REACT_APP_C_APP_ORIGIN?: string } } })
-    .process?.env?.REACT_APP_C_APP_ORIGIN ?? 'http://localhost:3000';
+  process.env.REACT_APP_C_APP_ORIGIN ?? 'http://localhost:3000';
 
 /**
  * B 端自身的域名（用于拼接回跳地址）
