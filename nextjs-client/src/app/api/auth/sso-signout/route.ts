@@ -16,23 +16,39 @@ export async function GET(req: NextRequest) {
 
   const response = NextResponse.redirect(callbackUrl.toString());
 
-  // 同时清理开发态和生产态可能使用的会话 Cookie 名称
-  response.cookies.set("authjs.session-token", "", {
-    path: "/",
-    maxAge: 0,
-    expires: new Date(0),
-  });
-  response.cookies.set("__Secure-authjs.session-token", "", {
-    path: "/",
-    maxAge: 0,
-    expires: new Date(0),
-    secure: true,
-  });
-  response.cookies.set("authjs.csrf-token", "", {
-    path: "/",
-    maxAge: 0,
-    expires: new Date(0),
-  });
+  const clearCookie = (name: string) => {
+    const secure = name.startsWith("__Secure-") || name.startsWith("__Host-");
+    response.cookies.set(name, "", {
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+      secure,
+    });
+  };
+
+  // Clear common names first.
+  [
+    "authjs.session-token",
+    "__Secure-authjs.session-token",
+    "next-auth.session-token",
+    "__Secure-next-auth.session-token",
+    "authjs.csrf-token",
+    "__Host-authjs.csrf-token",
+    "next-auth.csrf-token",
+    "__Host-next-auth.csrf-token",
+  ].forEach(clearCookie);
+
+  // Also clear chunked session cookies (e.g. __Secure-authjs.session-token.0/.1/...).
+  for (const { name } of req.cookies.getAll()) {
+    if (
+      name.startsWith("authjs.session-token") ||
+      name.startsWith("__Secure-authjs.session-token") ||
+      name.startsWith("next-auth.session-token") ||
+      name.startsWith("__Secure-next-auth.session-token")
+    ) {
+      clearCookie(name);
+    }
+  }
 
   return response;
 }

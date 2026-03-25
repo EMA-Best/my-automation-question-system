@@ -1,17 +1,6 @@
 "use client";
 
-/**
- * @file SignOutButton.tsx
- * @description 登出按钮 — Client Component
- *
- * 为什么单独拆出来？
- * next-auth v5 的 signOut() 是一个 Server Action / 表单提交，
- * 而按钮的点击事件属于客户端行为，所以需要在 Client Component 中调用 signOut()。
- * 父组件 TopBar（Server Component）只负责读 Session，登出操作委托给这里。
- */
-
 interface SignOutButtonProps {
-  /** 按钮文案，默认"退出登录" */
   label?: string;
 }
 
@@ -38,46 +27,16 @@ export default function SignOutButton({
     currentUrl.searchParams.delete("userName");
     currentUrl.searchParams.delete("name");
 
+    // Final step: clear C session and return to current C page with loggedOut=1.
     const cSignoutUrl = new URL("/api/auth/sso-signout", cOrigin);
     cSignoutUrl.searchParams.set("callbackUrl", currentUrl.toString());
 
-    const bLogoutBridgeUrl = new URL("/sso-logout", bOrigin);
-    bLogoutBridgeUrl.searchParams.set("silent", "1");
-    bLogoutBridgeUrl.searchParams.set("origin", cOrigin);
+    // Strong SLO path: top-level navigate to B logout first (clear B token in first-party context),
+    // then B redirects back to C signout URL to clear C session.
+    const bLogoutUrl = new URL("/sso-logout", bOrigin);
+    bLogoutUrl.searchParams.set("callbackUrl", cSignoutUrl.toString());
 
-    const bOriginOnly = new URL(bOrigin).origin;
-    const redirectToCSignout = () => {
-      window.location.href = cSignoutUrl.toString();
-    };
-
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== bOriginOnly) return;
-      const data = event.data as {
-        type?: string;
-        status?: "ok" | "miss";
-      };
-      if (data?.type !== "B_SSO_LOGOUT_RESULT") return;
-
-      window.removeEventListener("message", handleMessage);
-      iframe.remove();
-      window.clearTimeout(timeoutTimer);
-      // B 端 token 清理完成后，再清理 C 端会话，实现单点退出
-      redirectToCSignout();
-    };
-
-    window.addEventListener("message", handleMessage);
-
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    iframe.src = bLogoutBridgeUrl.toString();
-    iframe.title = "sso-logout-bridge";
-    document.body.appendChild(iframe);
-
-    const timeoutTimer = window.setTimeout(() => {
-      window.removeEventListener("message", handleMessage);
-      iframe.remove();
-      redirectToCSignout();
-    }, 1500);
+    window.location.href = bLogoutUrl.toString();
   };
 
   return (
