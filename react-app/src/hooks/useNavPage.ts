@@ -92,6 +92,27 @@ function isExternalUrl(url: string): boolean {
 }
 
 /**
+ * 将 callbackUrl 规范化为站内可导航路径：
+ * - 同源绝对 URL -> /path?query#hash
+ * - 相对路径 -> 原样返回
+ * - 跨域 URL -> 返回 null（应走 window.location）
+ */
+function normalizeInternalCallbackPath(url: string): string | null {
+  if (!url) return null;
+
+  // 已是站内相对路径
+  if (url.startsWith('/')) return url;
+
+  try {
+    const target = new URL(url);
+    if (target.origin !== window.location.origin) return null;
+    return `${target.pathname}${target.search}${target.hash}` || '/';
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 判断当前是否允许再次发起主动探测
  * - 从 sessionStorage 读取上次探测时间戳
  * - 超过冷却窗口才允许再次探测
@@ -137,12 +158,13 @@ function useNavPage(waitingUserData: boolean) {
 
         if (callbackUrl) {
           console.log('callbackUrl: ', callbackUrl);
-          if (isExternalUrl(callbackUrl)) {
+          const internalPath = normalizeInternalCallbackPath(callbackUrl);
+          if (!internalPath || isExternalUrl(callbackUrl)) {
             // 外部地址（如 C 端），整页跳转
             window.location.href = callbackUrl;
           } else {
             // 站内路径，使用 react-router 导航
-            navigate(callbackUrl, { replace: true });
+            navigate(internalPath, { replace: true });
           }
         } else {
           // 无 callbackUrl，默认跳到问卷列表
