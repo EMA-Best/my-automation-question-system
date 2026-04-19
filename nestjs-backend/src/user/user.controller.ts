@@ -32,12 +32,7 @@ export class UserController {
   @Public()
   @Post('register')
   async register(@Body() userDto: CreateUserDto) {
-    try {
-      return await this.userService.create(userDto);
-    } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      throw new HttpException(error, HttpStatus.BAD_REQUEST);
-    }
+    return await this.userService.create(userDto);
   }
 
   // 获取用户信息

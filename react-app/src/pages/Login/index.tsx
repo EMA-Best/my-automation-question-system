@@ -28,6 +28,24 @@ const PASSWORD_KEY = 'PASSWORD';
 const C_APP_ORIGIN = process.env.REACT_APP_C_APP_ORIGIN ?? '';
 const SSO_BRIDGE_LAST_TS_KEY = '__b_sso_bridge_last_ts__';
 const SSO_BRIDGE_COOLDOWN_MS = 3000;
+const DISABLED_ACCOUNT_MESSAGE = '您的账户已被禁用，请联系管理员';
+
+function normalizeLoginErrorMessage(rawMessage: string): string {
+  const msg = rawMessage.trim();
+  if (!msg) return '用户名或密码错误';
+
+  const lowerMsg = msg.toLowerCase();
+  const isDisabledAccountError =
+    msg.includes('禁用') ||
+    msg.includes('停用') ||
+    lowerMsg.includes('disabled');
+
+  if (isDisabledAccountError) {
+    return DISABLED_ACCOUNT_MESSAGE;
+  }
+
+  return msg;
+}
 
 // 记住用户登录信息
 const rememberUser = (username: string, password: string) => {
@@ -118,10 +136,11 @@ const Login: FC = () => {
         loadUserInfo();
       },
       onError(error) {
-        const errMsg =
+        const rawErrMsg =
           error instanceof Error && error.message
             ? error.message
             : '用户名或密码错误';
+        const errMsg = normalizeLoginErrorMessage(rawErrMsg);
         message.error(errMsg);
       },
     }

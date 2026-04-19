@@ -9,6 +9,21 @@ import { InjectModel } from '@nestjs/mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
 import { hashPassword, isBcryptHash, verifyPassword } from './password.util';
 
+function isDuplicateUsernameError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const record = error as Record<string, unknown>;
+  const code = record.code;
+  const keyPattern = record.keyPattern;
+
+  const isMongoDuplicateKey = code === 11000;
+  const duplicateOnUsername =
+    typeof keyPattern === 'object' &&
+    keyPattern !== null &&
+    'username' in (keyPattern as Record<string, unknown>);
+
+  return isMongoDuplicateKey && duplicateOnUsername;
+}
+
 @Injectable()
 export class UserService {
   /**
@@ -25,13 +40,26 @@ export class UserService {
    * @returns 创建的用户对象
    */
   async create(userData: CreateUserDto) {
+    const exists = await this.userModel.exists({ username: userData.username });
+    if (exists) {
+      throw new HttpException('用户名已存在', HttpStatus.BAD_REQUEST);
+    }
+
     // 密码加密
     const hashedPassword = await hashPassword(userData.password);
     const createdUser = new this.userModel({
       ...userData,
       password: hashedPassword,
     });
-    return await createdUser.save();
+
+    try {
+      return await createdUser.save();
+    } catch (error) {
+      if (isDuplicateUsernameError(error)) {
+        throw new HttpException('用户名已存在', HttpStatus.BAD_REQUEST);
+      }
+      throw error;
+    }
   }
 
   /**
