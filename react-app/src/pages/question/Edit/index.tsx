@@ -29,7 +29,7 @@ const Edit: FC = () => {
   const { title } = useGetPageInfo();
 
   // 设置页面标题
-  useTitle(`问卷编辑-${title}`);
+  useTitle(`问卷编辑 - ${title} | 小伦问卷 · 管理端`);
 
   return (
     <div className={styles.container}>

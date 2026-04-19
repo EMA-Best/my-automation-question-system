@@ -47,7 +47,7 @@ const defaultQueryState: QueryState = {
 type ActionType = 'detail' | 'restore' | 'hardDelete';
 
 const AdminTrash: FC = () => {
-  useTitle('小伦问卷 - 回收站');
+  useTitle('回收站 | 小伦问卷 · 管理端');
 
   const [form] = Form.useForm<QueryState>();
 

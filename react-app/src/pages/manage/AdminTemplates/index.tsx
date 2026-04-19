@@ -113,7 +113,7 @@ export type AdminTemplatesProps = {
  */
 const AdminTemplates: FC<AdminTemplatesProps> = (props) => {
   // ── 页面标题 ──────────────────────────────────────────
-  const pageTitle = props.pageTitle ?? '小伦问卷 - 模板管理';
+  const pageTitle = props.pageTitle ?? '模板管理 | 小伦问卷 · 管理端';
   const headerTitle = props.headerTitle ?? '模板管理';
   useTitle(pageTitle);
 

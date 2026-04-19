@@ -13,7 +13,7 @@ import AdminQuestions from '../AdminQuestions';
 const { Title } = Typography;
 
 const StarForUser: FC = () => {
-  useTitle('小伦问卷 - 星标问卷');
+  useTitle('星标问卷 | 小伦问卷 · 管理端');
   const { loading, data } = useLoadQuestionListData({ isStar: true });
   const { list, count } = data ?? { list: [], count: 0 };
   // console.log('星标问卷列表:', list, total);
@@ -62,7 +62,7 @@ const StarForUser: FC = () => {
 const StarForAdmin: FC = () => {
   return (
     <AdminQuestions
-      pageTitle="小伦问卷 - 运营推荐"
+      pageTitle="运营推荐 | 小伦问卷 · 管理端"
       headerTitle="运营推荐"
       defaultQuery={{ feature: 'featured' }}
     />

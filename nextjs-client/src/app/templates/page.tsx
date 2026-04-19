@@ -18,7 +18,7 @@ import type { TemplateDetail, TemplateListItem } from "@/types/template";
 import UseTemplateButton from "./_components/UseTemplateButton";
 
 export const metadata: Metadata = {
-  title: "问卷模板 - 选择模板",
+  title: "选择模板",
   description: "浏览并选择一个问卷模板，快速开始创建问卷",
 };
 
@@ -398,7 +398,9 @@ export default async function TemplatesPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 via-purple-50 to-pink-50">
-      <Suspense fallback={<div className="h-16 bg-gray-50 border-b border-gray-200" />}>
+      <Suspense
+        fallback={<div className="h-16 bg-gray-50 border-b border-gray-200" />}
+      >
         <TopBar />
       </Suspense>
       <div className="py-12 px-4">

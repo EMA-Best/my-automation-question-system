@@ -78,7 +78,7 @@ export type AdminQuestionsProps = {
 };
 
 const AdminQuestions: FC<AdminQuestionsProps> = (props) => {
-  const pageTitle = props.pageTitle ?? '小伦问卷 - 问卷管理';
+  const pageTitle = props.pageTitle ?? '问卷管理 | 小伦问卷 · 管理端';
   const headerTitle = props.headerTitle ?? '问卷管理';
   const defaultQuery = props.defaultQuery;
 

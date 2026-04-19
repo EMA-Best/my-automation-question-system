@@ -55,7 +55,7 @@ type LoginFormValues = {
 };
 
 const Login: FC = () => {
-  useTitle('小伦问卷 - 登录');
+  useTitle('登录 | 小伦问卷 · 管理端');
   const [searchParams] = useSearchParams();
   const [tokenCheckedAt, setTokenCheckedAt] = useState(0);
 

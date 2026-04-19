@@ -14,7 +14,7 @@ import AdminQuestions from '../AdminQuestions';
 const { Title } = Typography;
 
 const ListForUser: FC = () => {
-  useTitle('小伦问卷 - 全部问卷');
+  useTitle('全部问卷 | 小伦问卷 · 管理端');
   // const [questionList] = useState(rawQuestionList);
 
   // 当前不加这个状态会在一开始进入页面，出先暂无数据的bug，因为加载数据做了防抖，有延迟
@@ -157,7 +157,10 @@ const ListForUser: FC = () => {
 
 const ListForAdmin: FC = () => {
   return (
-    <AdminQuestions pageTitle="小伦问卷 - 全部问卷" headerTitle="全部问卷" />
+    <AdminQuestions
+      pageTitle="全部问卷 | 小伦问卷 · 管理端"
+      headerTitle="全部问卷"
+    />
   );
 };
 

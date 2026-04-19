@@ -67,7 +67,7 @@ const statusTextMap: Record<UserStatus, string> = {
 };
 
 const AdminUsers: FC = () => {
-  useTitle('小伦问卷 - 管理后台 - 用户管理');
+  useTitle('用户管理 | 小伦问卷 · 管理端');
 
   const currentUser = useGetUserInfo();
 

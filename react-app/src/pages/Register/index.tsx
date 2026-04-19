@@ -23,7 +23,7 @@ type RegisterFormValues = {
 };
 
 const Register: FC = () => {
-  useTitle('小伦问卷 - 注册');
+  useTitle('注册 | 小伦问卷 · 管理端');
   const navigate = useNavigate();
   // 注册用户
   const { run: handleRegister, loading } = useRequest(

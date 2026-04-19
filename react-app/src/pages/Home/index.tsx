@@ -12,7 +12,7 @@ const { Title, Paragraph } = Typography;
 
 const Home: FC = () => {
   // 设置页面标题
-  useTitle('小伦问卷 - 首页');
+  useTitle('首页 | 小伦问卷 · 管理端');
   const navigate = useNavigate();
 
   const { data, loading } = useRequest(getHomeStatService);

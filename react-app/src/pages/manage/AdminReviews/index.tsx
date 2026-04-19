@@ -56,7 +56,7 @@ const statusTextMap: Record<ReviewStatus, string> = {
 };
 
 const AdminReviews: FC = () => {
-  useTitle('小伦问卷 - 管理后台 - 审核队列');
+  useTitle('审核队列 | 小伦问卷 · 管理端');
 
   const [form] = Form.useForm<QueryState>();
   const [requestParams, setRequestParams] = useState<GetAdminReviewListParams>({

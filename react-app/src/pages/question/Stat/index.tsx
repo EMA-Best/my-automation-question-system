@@ -22,7 +22,7 @@ const Stat: FC = () => {
   const { title, isPublished } = useGetPageInfo();
 
   // 设置页面标题
-  useTitle(`问卷统计-${title}`);
+  useTitle(`问卷统计 - ${title} | 小伦问卷 · 管理端`);
 
   // loading部分
   const LoadingElem = (

@@ -47,8 +47,17 @@ export type AIGenerateStreamEvent =
       data: unknown;
     };
 
-const API_BASE_URL = process.env.REACT_APP_BACKEND_API_BASE || 'http://localhost:3007';
+const API_BASE_URL =
+  process.env.REACT_APP_BACKEND_API_BASE || 'http://localhost:3007';
 const STREAM_ENDPOINT = '/api/question/ai-generate/stream';
+
+function buildApiUrl(baseUrl: string, endpoint: string): string {
+  const normalizedBase = baseUrl.replace(/\/+$/, '');
+  const normalizedEndpoint = endpoint.startsWith('/')
+    ? endpoint
+    : `/${endpoint}`;
+  return `${normalizedBase}${normalizedEndpoint}`;
+}
 
 function parseSseEventBlock(
   block: string
@@ -89,8 +98,9 @@ export async function* aiGenerateQuestionStream(
   signal: AbortSignal
 ): AsyncGenerator<AIGenerateStreamEvent, void, void> {
   const token = getToken();
+  const requestUrl = buildApiUrl(API_BASE_URL, STREAM_ENDPOINT);
 
-  const res = await fetch(`${API_BASE_URL}${STREAM_ENDPOINT}`, {
+  const res = await fetch(requestUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -70,7 +70,7 @@ const { Title } = Typography;
 const { confirm } = Modal;
 
 const TrashUser: FC = () => {
-  useTitle('小伦问卷 - 回收站');
+  useTitle('回收站 | 小伦问卷 · 管理端');
   // refresh用于重新刷新数据
   const { loading, data, refresh } = useLoadQuestionListData({
     isDeleted: true,
